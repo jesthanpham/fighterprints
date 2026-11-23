@@ -29,3 +29,14 @@ def load_fixture_csvs(conn) -> None:
     for name in FILES:
         snapshot(conn, name, fixture_bytes(name))
         load_latest(conn, name)
+
+
+DBT_DIR = str(Path(__file__).resolve().parents[1] / "dbt")
+
+
+def dbt(*args: str) -> bool:
+    """Run a dbt command against the test target; True on success."""
+    from dbt.cli.main import dbtRunner
+
+    result = dbtRunner().invoke([*args, "--target", "test", "--project-dir", DBT_DIR, "--profiles-dir", DBT_DIR])
+    return result.success

@@ -39,3 +39,8 @@
         ) + {{ end_time_s }}
     )
 {%- endmacro %}
+
+{# Whole-number counts. Upstream writes some as decimals ("3.0"), so go through numeric. #}
+{% macro to_int(col) -%}
+    {{ clean(col) }}::numeric::int
+{%- endmacro %}

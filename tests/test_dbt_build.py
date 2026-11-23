@@ -1,22 +1,11 @@
-from pathlib import Path
-
-from dbt.cli.main import dbtRunner
-
-from tests.helpers import load_fixture_csvs
+from tests.helpers import dbt, load_fixture_csvs
 from ufc.identity.job import build_identity
-
-DBT_DIR = str(Path(__file__).resolve().parents[1] / "dbt")
-
-
-def dbt(*args: str) -> bool:
-    result = dbtRunner().invoke([*args, "--target", "test", "--project-dir", DBT_DIR, "--profiles-dir", DBT_DIR])
-    return result.success
 
 
 def test_staging_on_fixtures(db):
     load_fixture_csvs(db)
     build_identity(db)
-    assert dbt("build", "--select", "staging")
+    assert dbt("build", "--select", "staging", "--indirect-selection", "cautious")
     db.rollback()
     assert db.execute("select count(*) from staging.stg_fights").fetchone()[0] == 4
     method, elapsed = db.execute(

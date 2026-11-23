@@ -7,7 +7,7 @@ with results as (
         {{ clean('outcome') }}                       as outcome,
         {{ clean('weightclass') }}                   as weight_class,
         {{ clean('method') }}                        as method_raw,
-        {{ clean('round') }}::int                    as end_round,
+        {{ to_int('round') }}                    as end_round,
         {{ mmss_to_seconds('time') }}                as end_time_s,
         {{ clean('time_format') }}                   as time_format,
         row_number() over (partition by {{ id_from_url('url') }} order by _row_num) as dup_rank

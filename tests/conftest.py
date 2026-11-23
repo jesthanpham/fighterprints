@@ -33,3 +33,17 @@ def db(_conn):
     """A freshly bootstrapped test database, per test."""
     reset(_conn)
     return _conn
+
+
+@pytest.fixture(scope="module")
+def built_marts(_conn):
+    """Fixture CSVs loaded, identities resolved and the whole dbt project built. Shared within a test module."""
+    from tests.helpers import dbt, load_fixture_csvs
+    from ufc.identity.job import build_identity
+
+    reset(_conn)
+    load_fixture_csvs(_conn)
+    build_identity(_conn)
+    assert dbt("build"), "dbt build failed on the fixture data"
+    _conn.rollback()
+    return _conn

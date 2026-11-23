@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fighter_career_stats
+    columns:
+      - name: fighter_id
+        data_tests: [unique, not_null]
+
+  - name: fighter_fingerprint
+    columns:
+      - name: fighter_id
+        data_tests: [unique, not_null]
+
+  - name: fighter_print_params
+    description: The renderer contract. One row per fighter with every input the fingerprint uses.
+    columns:
+      - name: fighter_id
+        data_tests: [unique, not_null]
+      - name: archetype
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Striker, Wrestler, Grappler, Brawler, Balanced]
+      - name: stance
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Orthodox, Southpaw, Switch, Other]
+      - name: finish_rate
+        data_tests: [not_null]
+      - name: ko_losses
+        data_tests: [not_null]
+      - name: wins
+        data_tests: [not_null]
+      - name: losses
+        data_tests: [not_null]
+      - name: input_hash
+        data_tests: [not_null]
+
+  - name: fighter_fight_timeline
+    description: Every fight per fighter, in order (fight_seq 1 = debut).
