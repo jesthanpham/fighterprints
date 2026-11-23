@@ -65,7 +65,7 @@ def count_rows(content: bytes) -> int:
 def latest_commit(client: httpx.Client) -> tuple[str, datetime]:
     url = f"https://api.github.com/repos/{SOURCE_REPO}/commits?per_page=1"
     data = _get(client, url).json()[0]
-    when = datetime.fromisoformat(data["commit"]["committer"]["date"].replace("Z", "+00:00"))
+    when = datetime.fromisoformat(data["commit"]["committer"]["date"])
     return data["sha"], when
 
 

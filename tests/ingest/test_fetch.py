@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 from ufc.ingest import fetch
-from ufc.ingest.fetch import FetchError, FetchedFile, fetch_file, latest_commit, save_snapshot
+from ufc.ingest.fetch import FetchedFile, FetchError, fetch_file, latest_commit, save_snapshot
 
 
 @pytest.fixture(autouse=True)
