@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import httpx
-from dagster import AssetCheckSeverity, AssetKey, materialize
+from dagster import AssetCheckSeverity, AssetKey, DefaultScheduleStatus, materialize
 
 from tests.conftest import TEST_DATABASE_URL
 from tests.helpers import fixture_bytes
@@ -40,6 +40,8 @@ def test_definitions_load():
     schedule = defs.resolve_schedule_def("weekly_refresh")
     assert schedule.cron_schedule == "0 10 * * 0"
     assert schedule.execution_timezone == "America/Toronto"
+    # schedules start stopped unless told otherwise; this one must actually run
+    assert schedule.default_status == DefaultScheduleStatus.RUNNING
 
 
 def test_dbt_sources_hang_off_the_python_assets():

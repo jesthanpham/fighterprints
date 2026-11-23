@@ -18,6 +18,7 @@ from dagster import (
     AssetSelection,
     AssetSpec,
     ConfigurableResource,
+    DefaultScheduleStatus,
     Definitions,
     MaterializeResult,
     ScheduleDefinition,
@@ -135,6 +136,7 @@ weekly_refresh = ScheduleDefinition(
     job=refresh_everything,
     cron_schedule="0 10 * * 0",  # Sundays 10:00, after Saturday-night events
     execution_timezone="America/Toronto",
+    default_status=DefaultScheduleStatus.RUNNING,  # Dagster schedules start stopped unless told otherwise
 )
 
 defs = Definitions(

@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # so "app" and "ufc" import when run by streamlit
 
-from app.data import default_pair, list_fighters, print_payload, stat_rows
+from app.data import default_pair, has_data, list_fighters, print_payload, stat_rows
 from app.render import prints_html
 from ufc.db import connect
 
@@ -23,13 +23,21 @@ def get_conn():
 
 
 conn = get_conn()
+
+st.title("Style Fingerprints")
+st.caption("Every print is grown from a fighter's UFC stats and fight history. Same fighter, same print.")
+
+if not has_data(conn):
+    st.info(
+        "No fighter data yet. Run the pipeline first: open Dagster at http://localhost:3000, "
+        "materialize all assets, then refresh this page."
+    )
+    st.stop()
+
 fighters = list_fighters(conn)
 ids = [fid for fid, _ in fighters]
 labels = dict(fighters)
 default_a, default_b = default_pair(conn)
-
-st.title("Style Fingerprints")
-st.caption("Every print is grown from a fighter's UFC stats and fight history. Same fighter, same print.")
 
 left, right = st.columns(2)
 a = left.selectbox("Fighter A", ids, index=ids.index(default_a), format_func=labels.get)

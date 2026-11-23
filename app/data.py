@@ -24,6 +24,13 @@ def _jsonable(value):
     return value
 
 
+def has_data(conn: psycopg.Connection) -> bool:
+    """True once the pipeline has built the marts and there are fighters to show."""
+    if conn.execute("select to_regclass('marts.fighter_print_params')").fetchone()[0] is None:
+        return False
+    return conn.execute("select exists (select 1 from marts.fighter_print_params)").fetchone()[0]
+
+
 def list_fighters(conn: psycopg.Connection) -> list[tuple[str, str]]:
     """(fighter_id, label) for every fighter. Fighters who share a name get their weight in the label."""
     rows = conn.execute(
