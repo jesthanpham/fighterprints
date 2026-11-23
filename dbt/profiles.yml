@@ -1,0 +1,21 @@
+ufc:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('UFC_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('UFC_DB_PORT', '5433') | int }}"
+      user: "{{ env_var('UFC_DB_USER', 'ufc') }}"
+      password: "{{ env_var('UFC_DB_PASSWORD', 'ufc') }}"
+      dbname: ufc
+      schema: public
+      threads: 4
+    test:
+      type: postgres
+      host: "{{ env_var('UFC_DB_HOST', 'localhost') }}"
+      port: "{{ env_var('UFC_DB_PORT', '5433') | int }}"
+      user: "{{ env_var('UFC_DB_USER', 'ufc') }}"
+      password: "{{ env_var('UFC_DB_PASSWORD', 'ufc') }}"
+      dbname: ufc_test
+      schema: public
+      threads: 4

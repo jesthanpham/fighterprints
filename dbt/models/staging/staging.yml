@@ -1,0 +1,144 @@
+version: 2
+
+models:
+  - name: stg_events
+    description: One row per event.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+
+  - name: stg_fights
+    description: One row per fight (deduplicated by fight URL), with parsed outcome, method group and elapsed time.
+    columns:
+      - name: fight_id
+        data_tests: [unique, not_null]
+      - name: method_group
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [KO_TKO, SUB, DEC, OTHER]
+
+  - name: stg_fight_round_stats
+    description: One row per fighter per round, "X of Y" split into landed/attempted, control time in seconds.
+
+  - name: stg_fighters
+    description: One row per fighter, from the tale-of-the-tape file.
+    columns:
+      - name: fighter_id
+        data_tests: [unique, not_null]
+      - name: stance
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Orthodox, Southpaw, Switch, Other]
+
+  - name: stg_fighter_identity
+    description: Which fighter_id each name in each fight resolved to, and how.
+
+unit_tests:
+  - name: stg_fights_groups_methods
+    model: stg_fights
+    given:
+      - input: source('src', 'ufc_fight_results')
+        rows:
+          - {event: "E1 ", bout: "A One vs. B Two", outcome: "W/L", weightclass: "Lightweight Bout", method: "KO/TKO ", round: "1", time: "2:30", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/u1", _row_num: 1}
+          - {event: "E1 ", bout: "C Three vs. D Four", outcome: "L/W", weightclass: "Lightweight Bout", method: "TKO - Doctor's Stoppage", round: "2", time: "5:00", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/u2", _row_num: 2}
+          - {event: "E1 ", bout: "E Five vs. F Six", outcome: "D/D", weightclass: "Lightweight Bout", method: "Decision - Split ", round: "3", time: "5:00", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/u3", _row_num: 3}
+          - {event: "E1 ", bout: "G Seven vs. H Eight", outcome: "NC/NC", weightclass: "Lightweight Bout", method: "Overturned ", round: "1", time: "1:00", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/u4", _row_num: 4}
+          - {event: "E1 ", bout: "I Nine vs. J Ten", outcome: "W/L", weightclass: "Lightweight Bout", method: "Submission ", round: "1", time: "0:45", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/u5", _row_num: 5}
+      - input: source('src', 'ufc_fight_details')
+        rows:
+          - {event: "E1", bout: "A One vs. B Two", url: "http://ufcstats.com/fight-details/u1"}
+      - input: ref('stg_events')
+        rows:
+          - {event_id: "e1", event_name: "E1", event_date: "2024-01-01", location: "X"}
+    expect:
+      rows:
+        - {fight_id: "u1", method_group: "KO_TKO", outcome_a: "W", outcome_b: "L", fighter_a_name: "A One", fighter_b_name: "B Two", event_id: "e1"}
+        - {fight_id: "u2", method_group: "KO_TKO", outcome_a: "L", outcome_b: "W", fighter_a_name: "C Three", fighter_b_name: "D Four", event_id: "e1"}
+        - {fight_id: "u3", method_group: "DEC", outcome_a: "D", outcome_b: "D", fighter_a_name: "E Five", fighter_b_name: "F Six", event_id: "e1"}
+        - {fight_id: "u4", method_group: "OTHER", outcome_a: "NC", outcome_b: "NC", fighter_a_name: "G Seven", fighter_b_name: "H Eight", event_id: "e1"}
+        - {fight_id: "u5", method_group: "SUB", outcome_a: "W", outcome_b: "L", fighter_a_name: "I Nine", fighter_b_name: "J Ten", event_id: "e1"}
+
+  - name: stg_fights_elapsed_time
+    model: stg_fights
+    given:
+      - input: source('src', 'ufc_fight_results')
+        rows:
+          - {event: "E1", bout: "A vs. B", outcome: "W/L", method: "Decision - Unanimous", round: "3", time: "5:00", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/t1", _row_num: 1}
+          - {event: "E1", bout: "A vs. B", outcome: "W/L", method: "KO/TKO", round: "1", time: "2:30", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/t2", _row_num: 2}
+          - {event: "E1", bout: "A vs. B", outcome: "W/L", method: "KO/TKO", round: "2", time: "1:00", time_format: "1 Rnd + OT (12-3)", url: "http://ufcstats.com/fight-details/t3", _row_num: 3}
+          - {event: "E1", bout: "A vs. B", outcome: "W/L", method: "Submission", round: "1", time: "12:00", time_format: "No Time Limit", url: "http://ufcstats.com/fight-details/t4", _row_num: 4}
+          - {event: "E1", bout: "A vs. B", outcome: "W/L", method: "KO/TKO", round: "2", time: "0:30", time_format: "No Time Limit", url: "http://ufcstats.com/fight-details/t5", _row_num: 5}
+          - {event: "E1", bout: "A vs. B", outcome: "W/L", method: "KO/TKO", round: "1", time: "1:00", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/t2", _row_num: 6}
+      - input: source('src', 'ufc_fight_details')
+        rows:
+          - {event: "E1", bout: "A vs. B", url: "http://ufcstats.com/fight-details/t1"}
+      - input: ref('stg_events')
+        rows:
+          - {event_id: "e1", event_name: "E1", event_date: "2024-01-01", location: "X"}
+    expect:
+      rows:
+        - {fight_id: "t1", end_round: 3, end_time_s: 300, elapsed_s: 900}
+        - {fight_id: "t2", end_round: 1, end_time_s: 150, elapsed_s: 150}
+        - {fight_id: "t3", end_round: 2, end_time_s: 60, elapsed_s: 780}
+        - {fight_id: "t4", end_round: 1, end_time_s: 720, elapsed_s: 720}
+        - {fight_id: "t5", end_round: 2, end_time_s: 30, elapsed_s: 330}
+
+  - name: stg_fights_event_via_other_name
+    description: A renamed event still finds its event_id through fight_details' other listing.
+    model: stg_fights
+    given:
+      - input: source('src', 'ufc_fight_results')
+        rows:
+          - {event: "Noche UFC: X vs. Y", bout: "X vs. Y", outcome: "W/L", method: "KO/TKO", round: "1", time: "1:00", time_format: "3 Rnd (5-5-5)", url: "http://ufcstats.com/fight-details/n1", _row_num: 1}
+      - input: source('src', 'ufc_fight_details')
+        rows:
+          - {event: "Noche UFC: X vs. Y", bout: "X vs. Y", url: "http://ufcstats.com/fight-details/n1"}
+          - {event: "UFC Fight Night: X vs. Y", bout: "X vs. Y", url: "http://ufcstats.com/fight-details/n1"}
+      - input: ref('stg_events')
+        rows:
+          - {event_id: "efn", event_name: "UFC Fight Night: X vs. Y", event_date: "2025-01-10", location: "X"}
+    expect:
+      rows:
+        - {fight_id: "n1", event_id: "efn", event_name: "UFC Fight Night: X vs. Y", event_date: "2025-01-10"}
+
+  - name: stg_fight_round_stats_parsing
+    model: stg_fight_round_stats
+    given:
+      - input: source('src', 'ufc_fight_stats')
+        rows:
+          - {event: "E1", bout: "A vs. B", round: "Round 1", fighter: "A", kd: "1", sig_str: "11 of 25", total_str: "11 of 25", td: "0 of 0", sub_att: "0", rev: "0", ctrl: "0:18", head: "4 of 16", body: "0 of 0", leg: "7 of 9", distance: "11 of 25", clinch: "0 of 0", ground: "0 of 0", _row_num: 1}
+          - {event: "", bout: "", round: "", fighter: "", kd: "", sig_str: "", total_str: "", td: "", sub_att: "", rev: "", ctrl: "", head: "", body: "", leg: "", distance: "", clinch: "", ground: "", _row_num: 2}
+          - {event: "Noche UFC: X", bout: "C vs. D", round: "Round 2", fighter: "C", kd: "0", sig_str: "3 of 4", total_str: "5 of 7", td: "1 of 2", sub_att: "1", rev: "0", ctrl: "--", head: "3 of 4", body: "0 of 0", leg: "0 of 0", distance: "0 of 0", clinch: "0 of 0", ground: "3 of 4", _row_num: 3}
+      - input: source('src', 'ufc_fight_details')
+        rows:
+          - {event: "E1", bout: "A vs. B", url: "http://ufcstats.com/fight-details/s1"}
+          - {event: "Noche UFC: X", bout: "C vs. D", url: "http://ufcstats.com/fight-details/s2"}
+          - {event: "UFC Fight Night: X", bout: "C vs. D", url: "http://ufcstats.com/fight-details/s2"}
+      - input: ref('stg_fighter_identity')
+        rows:
+          - {fight_id: "s1", name_as_written: "A", fighter_id: "fa", method: "exact"}
+          - {fight_id: "s2", name_as_written: "C", fighter_id: "fc", method: "exact"}
+    expect:
+      rows:
+        - {fight_id: "s1", round_num: 1, fighter_id: "fa", kd: 1, sig_landed: 11, sig_att: 25, ctrl_s: 18, head_landed: 4, head_att: 16, leg_landed: 7, leg_att: 9}
+        - {fight_id: "s2", round_num: 2, fighter_id: "fc", kd: 0, sig_landed: 3, sig_att: 4, ctrl_s: null, head_landed: 3, head_att: 4, leg_landed: 0, leg_att: 0}
+
+  - name: stg_fighters_parsing
+    model: stg_fighters
+    given:
+      - input: source('src', 'ufc_fighter_tott')
+        rows:
+          - {fighter: "A One", height: "5' 11\"", weight: "155 lbs.", reach: "72\"", stance: "Orthodox", dob: "Jan 01, 1995", url: "http://ufcstats.com/fighter-details/a1", _row_num: 1}
+          - {fighter: "B Two", height: "--", weight: "--", reach: "--", stance: "", dob: "--", url: "http://ufcstats.com/fighter-details/b2", _row_num: 2}
+          - {fighter: "C Three", height: "6' 0\"", weight: "185 lbs.", reach: "74\"", stance: "Sideways", dob: "Jul 13, 1989", url: "http://ufcstats.com/fighter-details/c3", _row_num: 3}
+      - input: source('src', 'ufc_fighter_details')
+        rows:
+          - {first: "A", last: "One", nickname: "The Ace", url: "http://ufcstats.com/fighter-details/a1"}
+    expect:
+      rows:
+        - {fighter_id: "a1", fighter_name: "A One", nickname: "The Ace", height_in: 71, weight_lbs: 155, reach_in: 72, stance: "Orthodox", dob: "1995-01-01"}
+        - {fighter_id: "b2", fighter_name: "B Two", nickname: null, height_in: null, weight_lbs: null, reach_in: null, stance: null, dob: null}
+        - {fighter_id: "c3", fighter_name: "C Three", nickname: null, height_in: 72, weight_lbs: 185, reach_in: 74, stance: "Other", dob: "1989-07-13"}

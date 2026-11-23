@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: src
+    description: Latest snapshot of each upstream CSV (all text), plus the identity table built in Python.
+    schema: src
+    tables:
+      - name: ufc_event_details
+      - name: ufc_fight_details
+      - name: ufc_fight_results
+      - name: ufc_fight_stats
+      - name: ufc_fighter_details
+      - name: ufc_fighter_tott
+      - name: fighter_identity
