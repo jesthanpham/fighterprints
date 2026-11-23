@@ -27,6 +27,11 @@ packages = ["src/ufc"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+filterwarnings = [
+    # third-party noise, not ours
+    "ignore:sqlglotrs is deprecated:DeprecationWarning",
+    "ignore:The `__fields__` attribute is deprecated:DeprecationWarning",
+]
 
 [tool.ruff]
 line-length = 110

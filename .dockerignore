@@ -1,0 +1,11 @@
+.git
+.venv
+.superpowers
+.claude
+.pytest_cache
+.ruff_cache
+**/__pycache__
+data
+dbt/target
+dbt/logs
+.dagster_home

@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: src
-    description: Latest snapshot of each upstream CSV (all text), plus the identity table built in Python.
+    description: >
+      Latest snapshot of each upstream CSV (all text), plus the identity table built in Python.
+      In Dagster these are the src/<table> assets produced by the ingest steps.
     schema: src
     tables:
       - name: ufc_event_details

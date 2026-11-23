@@ -16,5 +16,28 @@ services:
       timeout: 3s
       retries: 20
 
+  # Dagster UI + scheduler daemon (http://localhost:3000)
+  dagster:
+    build: .
+    command: dagster dev -h 0.0.0.0 -p 3000 -m ufc.orchestration.definitions
+    ports:
+      - "3000:3000"
+    volumes:
+      - dagster_home:/dagster_home
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # The compare page (http://localhost:8501)
+  app:
+    build: .
+    command: streamlit run app/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
+  dagster_home:
