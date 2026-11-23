@@ -1,6 +1,6 @@
 import json
 
-from app.data import default_pair, list_fighters, print_payload, stat_rows
+from app.data import default_pair, list_fighters, match_score, print_payload, style_match
 
 
 def test_print_payload_shape(built_marts):
@@ -19,12 +19,43 @@ def test_duplicate_names_are_distinguishable(built_marts):
     assert labels["aa01"] == "Alan Alpha (1-0-1)"
 
 
-def test_stat_rows_edges(built_marts):
-    rows = {r["label"]: r for r in stat_rows(built_marts, "aa01", "bb01")}
-    # Alan absorbs 61 strikes in 17.5 min (3.49/min); Ben absorbs 11 in 2.5 min (4.4/min): lower is better
-    assert rows["Sig. strikes absorbed / min"]["edge"] == "a"
-    assert rows["Record"]["a"] == "1-0-1"
-    assert rows["Stance"]["edge"] == "even"
+def vector(value, archetype="Striker", **overrides):
+    dims = ["pace_pct", "absorbed_pct", "accuracy_pct", "defense_pct",
+            "takedown_pct", "control_pct", "submission_pct", "finish_pct"]
+    return {"archetype": archetype, **dict.fromkeys(dims, value), **overrides}
+
+
+def test_identical_styles_score_100():
+    assert match_score(vector(0.4), vector(0.4)) == 100
+
+
+def test_different_archetype_costs_10_points():
+    assert match_score(vector(0.4), vector(0.4, archetype="Wrestler")) == 90
+
+
+def test_opposite_styles_score_0():
+    assert match_score(vector(0.0), vector(1.0, archetype="Wrestler")) == 0
+
+
+def test_score_is_100_minus_average_gap():
+    # gaps: 0.2 on all 8 dimensions -> 80
+    assert match_score(vector(0.3), vector(0.5)) == 80
+
+
+def test_only_shared_dimensions_count():
+    a = vector(0.5, pace_pct=None, absorbed_pct=None)
+    b = vector(0.5, pace_pct=0.0, absorbed_pct=0.0)
+    assert match_score(a, b) == 100
+
+
+def test_too_few_shared_dimensions_gives_no_score():
+    a = vector(None, pace_pct=0.5, absorbed_pct=0.5, finish_pct=0.5)
+    assert match_score(a, vector(0.5)) is None
+
+
+def test_style_match_without_established_fighters_is_none(built_marts):
+    # every fixture fighter is a small sample, so there's no distribution to place them on
+    assert style_match(built_marts, "aa01", "dd01") is None
 
 
 def test_default_pair_is_two_different_fighters(built_marts):

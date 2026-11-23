@@ -1,0 +1,9 @@
+[theme]
+base = "light"
+backgroundColor = "#F7F4EE"           # off-white page
+secondaryBackgroundColor = "#EDE8DF"  # pickers and inputs
+textColor = "#1C1B19"
+primaryColor = "#1C1B19"
+
+[client]
+toolbarMode = "minimal"

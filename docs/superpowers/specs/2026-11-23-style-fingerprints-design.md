@@ -173,9 +173,15 @@ Every fighter gets a generated, realistic black-ink fingerprint. A throwaway pro
 - **Stance** and **reach** come from `ufc_fighter_tott.csv`; **sig. strikes by target** (HEAD/BODY/LEG) from `ufc_fight_stats.csv`. Missing reach or stance falls back to a default (reach 72", orthodox) and is flagged; it must never break a print.
 
 ### 6.7 Serve (Streamlit)
-- **Fighter page:** the fingerprint (with a Forensic view toggle), archetype badge, a "how to read this print" list for that fighter (e.g. "21-5 → 26 marks, 81% finish rate → heavy ink"), career stats, and a round-by-round output chart.
-- **Compare page:** pick two fighters → both prints side by side, a **style match %** (distance between their normalized stat vectors, with a penalty for different archetypes), a stat-by-stat table with the edge highlighted, and 3–5 plain-English "edges" lines (e.g. "A lands 2.1 more sig. strikes/min; B averages 3.4 takedowns per 15").
-- Download any print as a PNG (canvas export in the browser).
+
+**Decided 2026-11-23 (candidate): the website never explains how stats become prints.** No style badges, no "what drove this print" notes, no stat table, no explainer copy. The page is: two fighter pickers, the two fingerprints, and one similarity percentage, on an off-white background. The mapping stays documented in the README for interviewers. (This replaces the fighter page, stat table, edges lines and PNG download planned earlier.)
+
+**Similarity % (style match):**
+- 8 style dimensions per fighter, each as a UFC-wide percentile (the share of established fighters at or below their value): sig. strikes landed/min, absorbed/min, striking accuracy, striking defense, takedowns/15, control share, submission attempts/15, finish rate. Built in dbt as `marts.fighter_style_vector`; established = not `small_sample`.
+- Score = 100 × (1 − mean absolute gap) over the dimensions both fighters have, minus 10 if their archetypes differ, clamped to 0–100 and rounded.
+- Fewer than 4 shared dimensions → no number (shown as "–").
+- Approaches rejected: raw-stat distance (big-number stats dominate); comparing the images (measures the drawing, not the fighting).
+
 - Reads only from the marts schema.
 
 ### 6.8 Orchestration (Dagster)

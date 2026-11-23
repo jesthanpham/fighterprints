@@ -1,9 +1,31 @@
-"""Build the self-contained HTML that draws two fingerprints side by side in the browser."""
+"""Build the self-contained HTML that draws two fingerprints and their similarity score."""
 
 import json
+import re
 from pathlib import Path
 
 RENDERER = Path(__file__).parent / "components" / "fingerprint" / "fingerprint.js"
+
+# Only what the drawing needs goes to the browser: no record, weight, opponents or events.
+DRAW_PARAMS = [
+    "fighter_id", "fighter_name", "archetype", "sig_landed_per_min", "sig_absorbed_per_min",
+    "head_pct", "reach_in", "stance", "finish_rate", "ko_losses",
+]
+DRAW_FIGHT_FIELDS = ["result", "method_group"]
+
+
+def _for_drawing(payload: dict) -> dict:
+    return {
+        "params": {k: payload["params"].get(k) for k in DRAW_PARAMS},
+        "fights": [{k: f.get(k) for k in DRAW_FIGHT_FIELDS} for f in payload["fights"]],
+    }
+
+
+def _without_comments(js: str) -> str:
+    """Drop comments so the page source doesn't narrate how stats shape the print."""
+    js = re.sub(r"/\*.*?\*/\n?", "", js, flags=re.DOTALL)  # block comments
+    js = re.sub(r"(?m)^[ \t]*//[^\n]*\n", "", js)  # whole-line comments
+    return re.sub(r"(?m)[ \t]+//[^\n]*$", "", js)   # trailing comments
 
 
 def _safe_json(data) -> str:
@@ -14,50 +36,45 @@ def _safe_json(data) -> str:
 TEMPLATE = """<!doctype html>
 <html><head><meta charset="utf-8">
 <style>
-  body { margin: 0; font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1c1b19; }
-  .row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
-  /* Each print sits on its own light card so it reads the same in Streamlit's light and dark themes. */
-  figure { margin: 0; width: 300px; padding: 10px; background: #fff; border-radius: 12px; }
-  .print { position: relative; width: 300px; aspect-ratio: 300 / 375; background: #fff; border-radius: 8px;
-           border: 1px solid #e2ddd3; overflow: hidden; }
+  body { margin: 0; background: transparent; color: #1c1b19;
+         font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  /* print | score | print on one line; the prints shrink to fit narrow windows */
+  .row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; }
+  figure { margin: 0; width: min(300px, calc((100vw - 170px) / 2)); text-align: center; }
+  .print { position: relative; width: 100%; aspect-ratio: 300 / 375; background: #fff; border-radius: 12px;
+           box-shadow: 0 1px 3px rgba(28, 27, 25, 0.08); overflow: hidden; }
   .print canvas, .print svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .print svg { display: none; }
-  h3 { margin: 8px 0 2px; font-size: 16px; }
-  .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: #1c1b19; color: #fff; }
-  ul { margin: 6px 0 0; padding-left: 18px; color: #6b675f; font-size: 13px; }
+  figcaption { margin-top: 10px; font-weight: 600; font-size: 17px; }
+  .score { flex: 0 0 auto; min-width: 104px; text-align: center; }
+  .score .pct { font-size: clamp(34px, 7vw, 56px); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .score .label { color: #6b675f; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
 </style></head>
 <body>
-<div class="row" id="row"></div>
+<div class="row" id="row">
+  <figure id="a"><div class="print"><canvas></canvas><svg></svg></div><figcaption></figcaption></figure>
+  <div class="score"><div class="pct">__SCORE__</div><div class="label">similar</div></div>
+  <figure id="b"><div class="print"><canvas></canvas><svg></svg></div><figcaption></figcaption></figure>
+</div>
 <script type="application/json" id="payloads">__PAYLOADS__</script>
 <script type="module">
 __RENDERER__
 
-const PATTERN_WORDS = { whorl: "whorl", loop: "loop", double_loop: "double loop", tented_arch: "tented arch", plain_arch: "plain arch" };
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const payloads = JSON.parse(document.getElementById("payloads").textContent);
-const row = document.getElementById("row");
-for (const { params, fights } of payloads) {
-  const fig = document.createElement("figure");
-  fig.innerHTML = `<div class="print"><canvas></canvas><svg></svg></div>
-    <h3>${esc(params.fighter_name)}</h3><span class="badge">${esc(params.archetype)}</span><ul></ul>`;
-  row.append(fig);
-  const plan = drawPrint(fig.querySelector("canvas"), fig.querySelector("svg"), params, fights);
-  const pct = v => Math.round(Number(v) * 100) + "%";
-  const lines = [
-    `${params.archetype} → ${PATTERN_WORDS[plan.pattern]}`,
-    `${fights.length} UFC fights → ${fights.length} ridge marks`,
-    `${pct(params.finish_rate)} finish rate → ${plan.pressure > 0.6 ? "heavy" : plan.pressure > 0.3 ? "medium" : "light"} ink`,
-    `${params.ko_losses} KO loss${params.ko_losses === 1 ? "" : "es"} → ${plan.creaseCount} crease${plan.creaseCount === 1 ? "" : "s"}`,
-    `${plan.flags.includes("stance_missing") ? "Stance unknown" : params.stance} → ${plan.mirror ? "left" : "right"}-hand print`,
-  ];
-  if (plan.flags.includes("reach_missing")) lines.push("Reach unknown → average size");
-  if (plan.flags.includes("no_stats")) lines.push("No round stats → average pace and wear");
-  fig.querySelector("ul").innerHTML = lines.map(l => `<li>${esc(l)}</li>`).join("");
-}
+["a", "b"].forEach((id, i) => {
+  const fig = document.getElementById(id), { params, fights } = payloads[i];
+  fig.querySelector("figcaption").textContent = params.fighter_name;
+  drawPrint(fig.querySelector("canvas"), fig.querySelector("svg"), params, fights);
+});
 </script>
 </body></html>
 """
 
 
-def prints_html(a: dict, b: dict) -> str:
-    return TEMPLATE.replace("__RENDERER__", RENDERER.read_text()).replace("__PAYLOADS__", _safe_json([a, b]))
+def prints_html(a: dict, b: dict, similarity: int | None) -> str:
+    score = f"{similarity}%" if similarity is not None else "–"
+    return (
+        TEMPLATE.replace("__SCORE__", score)
+        .replace("__RENDERER__", _without_comments(RENDERER.read_text()))
+        .replace("__PAYLOADS__", _safe_json([_for_drawing(a), _for_drawing(b)]))
+    )

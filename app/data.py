@@ -72,49 +72,35 @@ def print_payload(conn: psycopg.Connection, fighter_id: str) -> dict:
     }
 
 
-# (label, column, format, which side is better: "high", "low" or None for not comparable)
-STATS = [
-    ("Record", None, None, None),
-    ("Sig. strikes landed / min", "sig_landed_per_min", "{:.2f}", "high"),
-    ("Sig. strikes absorbed / min", "sig_absorbed_per_min", "{:.2f}", "low"),
-    ("Striking accuracy", "sig_acc", "{:.0%}", "high"),
-    ("Striking defense", "sig_def", "{:.0%}", "high"),
-    ("Takedowns / 15 min", "td_per15", "{:.2f}", "high"),
-    ("Takedown defense", "td_def", "{:.0%}", "high"),
-    ("Control time share", "ctrl_share", "{:.0%}", "high"),
-    ("Finish rate", "finish_rate", "{:.0%}", "high"),
-    ("Reach", "reach_in", '{:.0f}"', "high"),
-    ("Stance", "stance", "{}", None),
+DIMENSIONS = [
+    "pace_pct", "absorbed_pct", "accuracy_pct", "defense_pct",
+    "takedown_pct", "control_pct", "submission_pct", "finish_pct",
 ]
+MIN_SHARED_DIMENSIONS = 4
+ARCHETYPE_PENALTY = 10
 
 
-def _fighter_stats(conn: psycopg.Connection, fighter_id: str) -> dict:
-    cols = [c for _, c, _, _ in STATS if c] + ["wins", "losses", "draws"]
-    row = conn.execute(
-        f"select {', '.join('p.' + c if c in ('reach_in', 'stance') else 'c.' + c for c in cols)} "
-        "from marts.fighter_career_stats c join marts.fighter_print_params p using (fighter_id) "
-        "where fighter_id = %s",
-        (fighter_id,),
-    ).fetchone()
-    return dict(zip(cols, row, strict=True))
+def match_score(a: dict, b: dict) -> int | None:
+    """Similarity 0-100: 100 minus the average percentile gap, minus 10 if the style labels differ.
+
+    Only dimensions both fighters have count; with fewer than 4 there's no honest score.
+    """
+    gaps = [abs(a[d] - b[d]) for d in DIMENSIONS if a.get(d) is not None and b.get(d) is not None]
+    if len(gaps) < MIN_SHARED_DIMENSIONS:
+        return None
+    score = 100 * (1 - sum(gaps) / len(gaps))
+    if a.get("archetype") != b.get("archetype"):
+        score -= ARCHETYPE_PENALTY
+    return round(min(100, max(0, score)))
 
 
-def stat_rows(conn: psycopg.Connection, a_id: str, b_id: str) -> list[dict]:
-    a, b = _fighter_stats(conn, a_id), _fighter_stats(conn, b_id)
-    rows = []
-    for label, col, fmt, better in STATS:
-        if col is None:
-            rows.append({"label": label, "a": f"{a['wins']}-{a['losses']}-{a['draws']}",
-                         "b": f"{b['wins']}-{b['losses']}-{b['draws']}", "edge": "even"})
-            continue
-        va, vb = a[col], b[col]
-        edge = "even"
-        if better and va is not None and vb is not None and va != vb:
-            edge = "a" if (va > vb) == (better == "high") else "b"
-        rows.append({
-            "label": label,
-            "a": fmt.format(va) if va is not None else "–",
-            "b": fmt.format(vb) if vb is not None else "–",
-            "edge": edge,
-        })
-    return rows
+def style_match(conn: psycopg.Connection, a_id: str, b_id: str) -> int | None:
+    columns = ["fighter_id", "archetype", *DIMENSIONS]
+    rows = conn.execute(
+        f"select {', '.join(columns)} from marts.fighter_style_vector where fighter_id = any(%s)",
+        ([a_id, b_id],),
+    ).fetchall()
+    vectors = {r[0]: dict(zip(columns, r, strict=True)) for r in rows}
+    if a_id not in vectors or b_id not in vectors:
+        return None
+    return match_score(vectors[a_id], vectors[b_id])

@@ -6,7 +6,7 @@ It ingests the full UFC stats history (798 events, 9,000+ fights, 42,000+ fighte
 
 ![Khabib Nurmagomedov vs Max Holloway](docs/img/compare.jpg)
 
-*Khabib (Wrestler, loop pattern, no KO losses so no creases) vs Max Holloway (Brawler, tented arch, one crease).*
+*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease), 49% similar. The site shows only the prints and the score; how to read them is below.*
 
 ---
 
@@ -21,7 +21,7 @@ docker compose up -d --build
 Then:
 
 1. Open Dagster at http://localhost:3000 and materialize all assets (or run `docker compose exec dagster dagster asset materialize --select '*' -m ufc.orchestration.definitions`). The first load takes about a minute.
-2. Open the app at http://localhost:8501 and pick any two fighters.
+2. Open the app at http://localhost:8501 and pick any two fighters to see their prints and how similar they are.
 
 The pipeline then refreshes itself every Sunday at 10:00 (Toronto time), after Saturday-night events.
 
@@ -36,7 +36,7 @@ flowchart LR
     ID --> STG["dbt staging<br/>typed, deduped, parsed"]
     STG --> INT["dbt intermediate<br/>one row per fighter per fight"]
     INT --> MARTS["dbt marts<br/>career stats, archetypes,<br/>print contract"]
-    MARTS --> APP["Streamlit page<br/>renders the fingerprint"]
+    MARTS --> APP["Streamlit page<br/>two prints + similarity %"]
 ```
 
 | Stage | What it does | Why it matters |
@@ -47,7 +47,7 @@ flowchart LR
 | **Shrink guard** | Refuses a file with fewer than 90% of the previous load's rows. The old table stays in place. | A truncated or broken upstream file can't wipe good data. |
 | **Identity resolution** | Matches every "name in a fight" to a fighter ID (details below). | The stats files have **no fighter IDs**, and some names are shared. |
 | **dbt staging** | Trims text, turns `--`/`---`/empty into NULL, splits `"11 of 25"`, converts `"3:45"` to seconds, dedupes fights listed under two event names, computes elapsed fight time from formats like `5 Rnd (5-5-5-5-5)`. | Messy text becomes typed, trustworthy columns. |
-| **dbt marts** | Career rates (per minute / per 15 min), accuracy and defense, finish rate, rule-based style archetypes, and the renderer contract. | One clean, tested data product for the app. |
+| **dbt marts** | Career rates (per minute / per 15 min), accuracy and defense, finish rate, rule-based style archetypes, UFC-wide style percentiles, and the renderer contract. | One clean, tested data product for the app. |
 | **Checks** | 31 dbt data tests (keys, landed ≤ attempted, 2 fighters per fight, strike splits add up, unresolved-name rate, data freshness), 5 dbt unit tests on the parsing logic, and a Dagster freshness check on the upstream repo. | Problems show up as failed or warning checks, not as wrong charts. |
 
 ### Identity resolution
@@ -86,6 +86,12 @@ Each fighter's print is grown live in the browser: a ridge-direction field (the 
 | Fine details | Seeded from the fighter's ID: deterministic and unique |
 
 Missing reach or stance (common for early-era fighters) falls back to a flagged default, so a print never fails.
+
+## How similarity is scored
+
+Each fighter is placed on 8 style dimensions as a **UFC-wide percentile** (the share of established fighters at or below them): striking volume, strikes absorbed, accuracy, defense, takedowns, control time, submission attempts and finish rate. Percentiles put very different stats on the same 0–100 scale, so no single stat dominates.
+
+**Similarity = 100 − the average percentile gap**, minus 10 if their style labels differ. Fighters without enough round stats to compare on at least 4 dimensions get no score. For example, Khabib vs Islam Makhachev scores 86%, Khabib vs Max Holloway 49%.
 
 ## Project layout
 

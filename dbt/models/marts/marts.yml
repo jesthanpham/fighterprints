@@ -40,3 +40,32 @@ models:
 
   - name: fighter_fight_timeline
     description: Every fight per fighter, in order (fight_seq 1 = debut).
+
+  - name: fighter_style_vector
+    description: >
+      Each fighter's style as UFC-wide percentiles (share of established fighters at or below their value)
+      on 8 dimensions. Feeds the similarity score. NULL where the fighter has no round stats.
+    columns:
+      - name: fighter_id
+        data_tests: [unique, not_null]
+
+unit_tests:
+  - name: style_vector_percentiles
+    model: fighter_style_vector
+    given:
+      - input: ref('fighter_fingerprint')
+        rows:
+          - {fighter_id: "e1", archetype: "Striker", small_sample: false, sig_landed_per_min: 1.0, sig_absorbed_per_min: 2.0, sig_acc: 0.4, sig_def: 0.5, td_per15: 1.0, ctrl_share: 0.1, sub_att_per15: 0.2, finish_rate: 0.5}
+          - {fighter_id: "e2", archetype: "Striker", small_sample: false, sig_landed_per_min: 2.0, sig_absorbed_per_min: 2.0, sig_acc: 0.4, sig_def: 0.5, td_per15: 1.0, ctrl_share: 0.1, sub_att_per15: 0.2, finish_rate: 0.5}
+          - {fighter_id: "e3", archetype: "Striker", small_sample: false, sig_landed_per_min: 3.0, sig_absorbed_per_min: 2.0, sig_acc: 0.4, sig_def: 0.5, td_per15: 1.0, ctrl_share: 0.1, sub_att_per15: 0.2, finish_rate: 0.5}
+          - {fighter_id: "e4", archetype: "Striker", small_sample: false, sig_landed_per_min: 4.0, sig_absorbed_per_min: 2.0, sig_acc: 0.4, sig_def: 0.5, td_per15: 1.0, ctrl_share: 0.1, sub_att_per15: 0.2, finish_rate: 0.5}
+          - {fighter_id: "s1", archetype: "Balanced", small_sample: true, sig_landed_per_min: 2.5, sig_absorbed_per_min: 1.0, sig_acc: 0.4, sig_def: 0.5, td_per15: 1.0, ctrl_share: 0.1, sub_att_per15: 0.2, finish_rate: 0.0}
+          - {fighter_id: "n1", archetype: "Balanced", small_sample: true, sig_landed_per_min: null, sig_absorbed_per_min: null, sig_acc: null, sig_def: null, td_per15: null, ctrl_share: null, sub_att_per15: null, finish_rate: 0.0}
+    expect:
+      rows:
+        - {fighter_id: "e1", archetype: "Striker", pace_pct: 0.25, absorbed_pct: 1.0, finish_pct: 1.0}
+        - {fighter_id: "e2", archetype: "Striker", pace_pct: 0.5, absorbed_pct: 1.0, finish_pct: 1.0}
+        - {fighter_id: "e3", archetype: "Striker", pace_pct: 0.75, absorbed_pct: 1.0, finish_pct: 1.0}
+        - {fighter_id: "e4", archetype: "Striker", pace_pct: 1.0, absorbed_pct: 1.0, finish_pct: 1.0}
+        - {fighter_id: "s1", archetype: "Balanced", pace_pct: 0.5, absorbed_pct: 0.0, finish_pct: 0.0}
+        - {fighter_id: "n1", archetype: "Balanced", pace_pct: null, absorbed_pct: null, finish_pct: 0.0}

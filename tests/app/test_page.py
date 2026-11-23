@@ -13,6 +13,10 @@ def test_page_renders(built_marts, monkeypatch):
     at.run()
     assert not at.exception
     assert len(at.selectbox) == 2
+    # just the pickers, the prints and the score: no stat table, no explainer text
+    assert len(at.table) == 0
+    assert len(at.subheader) == 0
+    assert len(at.caption) == 0
 
 
 def test_page_explains_when_there_is_no_data_yet(db, monkeypatch):
