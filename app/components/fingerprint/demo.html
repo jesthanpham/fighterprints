@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fingerprint Demo</title>
+<style>
+  body { margin: 0; padding: 16px; background: #f3f1ec; font: 14px/1.4 system-ui, sans-serif; color: #1c1b19; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; }
+  figure { margin: 0; background: #fff; border-radius: 8px; padding: 8px; }
+  .print { position: relative; width: 300px; aspect-ratio: 300 / 375; }
+  .print canvas, .print svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  figcaption { max-width: 300px; color: #6b675f; }
+</style>
+</head>
+<body>
+<p>Renderer module demo: two hard-coded payloads shaped like the pipeline's marts. Forensic overlay shown.</p>
+<div class="row" id="row"></div>
+<script type="module">
+  import { drawPrint } from "./fingerprint.js";
+  const fights = (n, wins, koLosses) => Array.from({ length: n }, (_, i) => ({
+    fight_seq: i + 1,
+    result: i < wins ? "W" : "L",
+    method_group: i < wins ? ["KO_TKO", "SUB", "DEC"][i % 3] : (i - wins < koLosses ? "KO_TKO" : "DEC"),
+  }));
+  const payloads = [
+    { params: { fighter_id: "demo-striker", fighter_name: "Demo Striker", archetype: "Striker", sig_landed_per_min: 6.8,
+        sig_absorbed_per_min: 3.1, head_pct: 0.78, reach_in: 78, stance: "Orthodox", finish_rate: 0.75, ko_losses: 1 },
+      fights: fights(21, 18, 1) },
+    { params: { fighter_id: "demo-grappler", fighter_name: "Demo Grappler", archetype: "Grappler", sig_landed_per_min: 2.4,
+        sig_absorbed_per_min: 2.6, head_pct: 0.5, reach_in: null, stance: "Southpaw", finish_rate: 0.81, ko_losses: 2 },
+      fights: fights(26, 21, 2) },
+  ];
+  const row = document.getElementById("row");
+  for (const p of payloads) {
+    const fig = document.createElement("figure");
+    fig.innerHTML = `<div class="print"><canvas></canvas><svg></svg></div><figcaption></figcaption>`;
+    row.append(fig);
+    const plan = drawPrint(fig.querySelector("canvas"), fig.querySelector("svg"), p.params, p.fights);
+    fig.querySelector("figcaption").textContent =
+      `${p.params.fighter_name}: ${plan.pattern}, ${plan.markCount} marks, flags: ${plan.flags.join(", ") || "none"}`;
+  }
+</script>
+</body>
+</html>
