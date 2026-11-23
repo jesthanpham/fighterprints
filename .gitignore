@@ -1,1 +1,10 @@
 .superpowers/
+.venv/
+__pycache__/
+data/
+dbt/target/
+dbt/logs/
+.env
+.dagster_home/
+.pytest_cache/
+.ruff_cache/

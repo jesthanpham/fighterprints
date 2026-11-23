@@ -1,0 +1,38 @@
+[project]
+name = "ufc"
+version = "0.1.0"
+description = "UFC Style Fingerprints: a data pipeline that turns fight stats into generated fingerprints"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "dagster>=1.13.31",
+    "dagster-dbt>=0.29.31",
+    "dagster-webserver>=1.13.31",
+    "dbt-core>=1.8",
+    "dbt-postgres>=1.8",
+    "httpx>=0.28.1",
+    "psycopg[binary]>=3.3.9",
+    "rapidfuzz>=3.14.6",
+    "streamlit>=1.67.0",
+    "tenacity>=9.2.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ufc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 110
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.6",
+]
