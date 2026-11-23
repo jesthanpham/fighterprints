@@ -82,14 +82,16 @@ def fetch_file(client: httpx.Client, name: str, source_commit: str | None) -> Fe
 
 
 def save_snapshot(conn: psycopg.Connection, f: FetchedFile) -> bool:
-    """Store the file if this exact content is new. Returns True when a snapshot was added."""
-    cur = conn.execute(
+    """Store the file if this exact content is new (else just mark it seen). True when a snapshot was added."""
+    inserted = conn.execute(
         """
-        insert into raw.file_snapshots (file_name, sha256, source_commit, fetched_at, row_count, content)
-        values (%s, %s, %s, %s, %s, %s)
-        on conflict (file_name, sha256) do nothing
+        insert into raw.file_snapshots
+            (file_name, sha256, source_commit, fetched_at, row_count, content, last_seen_at)
+        values (%s, %s, %s, %s, %s, %s, %s)
+        on conflict (file_name, sha256) do update set last_seen_at = excluded.last_seen_at
+        returning (xmax = 0)
         """,
-        (f.name, f.sha256, f.source_commit, f.fetched_at, f.row_count, f.content),
-    )
+        (f.name, f.sha256, f.source_commit, f.fetched_at, f.row_count, f.content, f.fetched_at),
+    ).fetchone()[0]
     conn.commit()
-    return cur.rowcount == 1
+    return bool(inserted)

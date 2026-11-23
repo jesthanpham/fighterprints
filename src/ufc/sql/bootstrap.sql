@@ -1,7 +1,8 @@
 create schema if not exists raw;
 create schema if not exists src;
 
--- Every distinct version of every upstream file. Never updated or deleted.
+-- Every distinct version of every upstream file. Content is never changed; last_seen_at is bumped
+-- whenever the same version is fetched again, so a revert upstream makes the old version current again.
 create table if not exists raw.file_snapshots (
     snapshot_id   bigserial unique,
     file_name     text        not null,
@@ -10,8 +11,10 @@ create table if not exists raw.file_snapshots (
     fetched_at    timestamptz not null,
     row_count     int         not null,
     content       bytea       not null,
+    last_seen_at  timestamptz not null,
     primary key (file_name, sha256)
 );
+alter table raw.file_snapshots add column if not exists last_seen_at timestamptz;
 
 -- One row per load of a file into src.<file>.
 create table if not exists src.load_log (
