@@ -48,7 +48,7 @@ flowchart LR
 | **Identity resolution** | Matches every "name in a fight" to a fighter ID (details below). | The stats files have **no fighter IDs**, and some names are shared. |
 | **dbt staging** | Trims text, turns `--`/`---`/empty into NULL, splits `"11 of 25"`, converts `"3:45"` to seconds, dedupes fights listed under two event names, computes elapsed fight time from formats like `5 Rnd (5-5-5-5-5)`. | Messy text becomes typed, trustworthy columns. |
 | **dbt marts** | Career rates (per minute / per 15 min), accuracy and defense, finish rate, rule-based style archetypes, UFC-wide style percentiles, and the renderer contract. | One clean, tested data product for the app. |
-| **Checks** | 31 dbt data tests (keys, landed ≤ attempted, 2 fighters per fight, strike splits add up, unresolved-name rate, data freshness), 5 dbt unit tests on the parsing logic, and a Dagster freshness check on the upstream repo. | Problems show up as failed or warning checks, not as wrong charts. |
+| **Checks** | 33 dbt data tests (keys, landed ≤ attempted, 2 fighters per fight, strike splits add up, unresolved-name rate, data freshness), 6 dbt unit tests on the parsing and percentile logic, and a Dagster freshness check on the upstream repo. | Problems show up as failed or warning checks, not as wrong charts. |
 
 ### Identity resolution
 
