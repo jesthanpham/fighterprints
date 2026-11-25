@@ -4,12 +4,11 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # so "app" and "ufc" import when run by streamlit
 
 from app.data import default_pair, has_data, list_fighters, print_payload, style_match
-from app.render import prints_html
+from app.render import show_prints
 from ufc.db import connect
 
 st.set_page_config(page_title="Fighterprints", layout="centered")
@@ -42,7 +41,4 @@ left, right = st.columns(2)
 a = left.selectbox("Fighter A", ids, index=ids.index(default_a), format_func=labels.get)
 b = right.selectbox("Fighter B", ids, index=ids.index(default_b), format_func=labels.get)
 
-components.html(
-    prints_html(print_payload(conn, a), print_payload(conn, b), style_match(conn, a, b)),
-    height=470,
-)
+show_prints(print_payload(conn, a), print_payload(conn, b), style_match(conn, a, b))
