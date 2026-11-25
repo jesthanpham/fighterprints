@@ -33,6 +33,9 @@ def _safe_json(data) -> str:
     return json.dumps(data).replace("</", "<\\/").replace("<!--", "<\\!--")
 
 
+# Streamlit rebuilds the frame on every change, so the page remembers (sessionStorage) which fighter
+# was in each slot and only re-draws, pen-first, the print that actually changed. Reduced-motion
+# users get the finished print straight away.
 TEMPLATE = """<!doctype html>
 <html><head><meta charset="utf-8">
 <style>
@@ -41,8 +44,7 @@ TEMPLATE = """<!doctype html>
   /* print | score | print on one line; the prints shrink to fit narrow windows */
   .row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; }
   figure { margin: 0; width: min(300px, calc((100vw - 170px) / 2)); text-align: center; }
-  .print { position: relative; width: 100%; aspect-ratio: 300 / 375; background: #fff; border-radius: 12px;
-           box-shadow: 0 1px 3px rgba(28, 27, 25, 0.08); overflow: hidden; }
+  .print { position: relative; width: 100%; aspect-ratio: 300 / 375; }
   .print canvas, .print svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .print svg { display: none; }
   figcaption { margin-top: 10px; font-weight: 600; font-size: 17px; }
@@ -52,19 +54,25 @@ TEMPLATE = """<!doctype html>
 </style></head>
 <body>
 <div class="row" id="row">
-  <figure id="a"><div class="print"><canvas></canvas><svg></svg></div><figcaption></figcaption></figure>
+  <figure id="a"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
   <div class="score"><div class="pct">__SCORE__</div><div class="label">similar</div></div>
-  <figure id="b"><div class="print"><canvas></canvas><svg></svg></div><figcaption></figcaption></figure>
+  <figure id="b"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
 </div>
 <script type="application/json" id="payloads">__PAYLOADS__</script>
 <script type="module">
 __RENDERER__
 
 const payloads = JSON.parse(document.getElementById("payloads").textContent);
-["a", "b"].forEach((id, i) => {
-  const fig = document.getElementById(id), { params, fights } = payloads[i];
+const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shown = slot => { try { return sessionStorage.getItem("fighterprints-" + slot); } catch { return null; } };
+const remember = (slot, id) => { try { sessionStorage.setItem("fighterprints-" + slot, id); } catch {} };
+["a", "b"].forEach((slot, i) => {
+  const fig = document.getElementById(slot), { params, fights } = payloads[i];
   fig.querySelector("figcaption").textContent = params.fighter_name;
-  drawPrint(fig.querySelector("canvas"), fig.querySelector("svg"), params, fights);
+  const animate = !calm && shown(slot) !== params.fighter_id;
+  drawPrint(fig.querySelector("canvas.ink"), fig.querySelector("svg"), params, fights,
+            { strokes: fig.querySelector("canvas.strokes"), animate });
+  remember(slot, params.fighter_id);
 });
 </script>
 </body></html>

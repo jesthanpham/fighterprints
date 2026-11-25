@@ -62,3 +62,23 @@ def test_browser_only_gets_what_the_drawing_needs():
     assert set(fighter["fights"][0]) == {"result", "method_group"}
     for hidden in ("wins", "losses", "weight_lbs", "small_sample"):
         assert hidden not in fighter["params"]
+
+
+def _css_block(html, selector):
+    return re.search(re.escape(selector) + r"\s*\{(.*?)\}", html, re.DOTALL).group(1)
+
+
+def test_prints_sit_on_the_page_without_a_card():
+    css = _css_block(prints_html(payload("A"), payload("B"), 73), ".print")
+    assert "background" not in css
+    assert "box-shadow" not in css
+
+
+def test_each_print_has_a_pen_layer_for_the_animation():
+    assert prints_html(payload("A"), payload("B"), 73).count('class="strokes"') == 2
+
+
+def test_only_a_changed_print_redraws_and_reduced_motion_skips_it():
+    html = prints_html(payload("A"), payload("B"), 73)
+    assert "sessionStorage" in html
+    assert "prefers-reduced-motion" in html

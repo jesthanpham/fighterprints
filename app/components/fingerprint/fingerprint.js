@@ -158,13 +158,75 @@ function grow(plan, rand) {
   return { I, PW, R, minutiae };
 }
 
+// ---------------- stroke tracing (for the pen-drawing animation) ----------------
+// Marching squares: follow every place the field crosses `level`, then chain the little segments into
+// continuous lines. On the ridge field, those lines are the ridge edges, so the pen traces real ridges.
+export function traceContours(field, w, h, level, inside = () => true) {
+  const pts = new Map(), adj = new Map();
+  const point = (key, x0, y0, v0, x1, y1, v1) => {
+    if (!pts.has(key)) { const t = (level - v0) / (v1 - v0); pts.set(key, [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]); }
+    return key;
+  };
+  const link = (k1, k2) => {
+    const p = pts.get(k1), q = pts.get(k2);
+    if (!inside((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)) return;
+    if (!adj.has(k1)) adj.set(k1, []);
+    if (!adj.has(k2)) adj.set(k2, []);
+    adj.get(k1).push(k2); adj.get(k2).push(k1);
+  };
+  for (let y = 0; y < h - 1; y++) for (let x = 0; x < w - 1; x++) {
+    const a = field[y * w + x], b = field[y * w + x + 1], c = field[(y + 1) * w + x + 1], d = field[(y + 1) * w + x];
+    const A = a > level, B = b > level, C = c > level, D = d > level;
+    if (A === B && B === C && C === D) continue;
+    const T = A !== B ? point(`h${x},${y}`, x, y, a, x + 1, y, b) : null;
+    const Rt = B !== C ? point(`v${x + 1},${y}`, x + 1, y, b, x + 1, y + 1, c) : null;
+    const Bm = D !== C ? point(`h${x},${y + 1}`, x, y + 1, d, x + 1, y + 1, c) : null;
+    const L = A !== D ? point(`v${x},${y}`, x, y, a, x, y + 1, d) : null;
+    const cross = [T, Rt, Bm, L].filter(k => k !== null);
+    if (cross.length === 2) link(cross[0], cross[1]);
+    else if (cross.length === 4) {
+      const center = (a + b + c + d) / 4 > level;
+      if (center === A) { link(T, Rt); link(Bm, L); } else { link(T, L); link(Rt, Bm); }
+    }
+  }
+  const used = new Set(), lines = [];
+  const edge = (k1, k2) => (k1 < k2 ? `${k1}|${k2}` : `${k2}|${k1}`);
+  const walk = start => {
+    const line = [start];
+    let cur = start;
+    for (;;) {
+      const next = (adj.get(cur) || []).find(n => !used.has(edge(cur, n)));
+      if (next === undefined) break;
+      used.add(edge(cur, next));
+      line.push(next);
+      cur = next;
+      if (next === start) break;
+    }
+    if (line.length > 1) lines.push(line.map(k => pts.get(k)));
+  };
+  for (const [k, ns] of adj) if (ns.length === 1 && !used.has(edge(k, ns[0]))) walk(k);
+  for (const [k, ns] of adj) if (ns.some(n => !used.has(edge(k, n)))) walk(k);
+  return lines;
+}
+
+/** Order strokes so the pen starts at the core and works outward. */
+export function orderStrokes(lines, cx, cy) {
+  const nearest = line => Math.min(...line.map(([x, y]) => Math.hypot(x - cx, y - cy)));
+  return lines.map(l => [nearest(l), l]).sort((p, q) => p[0] - q[0]).map(p => p[1]);
+}
+
 // ---------------- inking + overlay ----------------
 const MARK_COLOR = { KO_TKO: "#d62828", SUB: "#2563eb", DEC: "#6b7280", OTHER: "#6b7280" };
 const RESULT_WORD = { W: "Win", L: "Loss", D: "Draw", NC: "No contest" };
 const METHOD_WORD = { KO_TKO: "KO/TKO", SUB: "Submission", DEC: "Decision", OTHER: "Other" };
 
 /** Draw the print onto `canvas`, and the forensic overlay (one mark per fight) into `svg`. */
-export function drawPrint(canvas, svg, params, fights) {
+/**
+ * Draw the print onto `canvas`, and the forensic overlay (one mark per fight) into `svg`.
+ * With options.strokes (a second canvas on top) and options.animate, a pen first traces the ridges
+ * from the core outward, then the finished ink fades in underneath.
+ */
+export function drawPrint(canvas, svg, params, fights, { strokes = null, animate = false, duration = 1800 } = {}) {
   const plan = printPlan(params, fights);
   const rand = rng32(hashStr(plan.seed));
   const g = grow(plan, rand);
@@ -231,6 +293,21 @@ export function drawPrint(canvas, svg, params, fights) {
   }
   ctx.putImageData(img, 0, 0);
 
+  if (strokes && animate) {
+    const field = new Float32Array(GW * GH);
+    for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) field[y * GW + x] = I[(y + R) * PW + x + R];
+    const inPrint = (gx, gy) => Math.hypot((gx - ecx) / erx, (gy - ecy) / ery) < 0.93;
+    const px = DW / 300;
+    const toCanvas = ([gx, gy]) => { const [x, y] = toDisplay(gx, gy); return [x * px, y * px]; };
+    const [coreX, coreY] = toCanvas([GW / 2, GH * 0.5 + plan.coreShift]);
+    const lines = traceContours(field, GW, GH, lerp(0.32, -0.22, plan.pressure), inPrint).map(l => l.map(toCanvas));
+    animateStrokes(strokes, canvas, orderStrokes(lines, coreX, coreY), duration);
+  } else {
+    canvas.style.transition = "none";
+    canvas.style.opacity = "1";
+    if (strokes) { strokes.getContext("2d").clearRect(0, 0, strokes.width, strokes.height); strokes.style.opacity = "0"; }
+  }
+
   // forensic overlay (shown by the host page when Forensic view is on)
   if (svg) {
     svg.setAttribute("viewBox", "0 0 300 375");
@@ -247,4 +324,44 @@ export function drawPrint(canvas, svg, params, fights) {
     }).join("");
   }
   return plan;
+}
+
+// Trace `lines` onto the stroke canvas like a pen, then fade the finished ink in and the pen lines out.
+function animateStrokes(strokeCanvas, inkCanvas, lines, duration) {
+  const token = (inkCanvas._fpAnimation = (inkCanvas._fpAnimation || 0) + 1);  // a newer call cancels this one
+  strokeCanvas.width = inkCanvas.width;
+  strokeCanvas.height = inkCanvas.height;
+  const sctx = strokeCanvas.getContext("2d");
+  sctx.lineWidth = 1.6;
+  sctx.lineCap = "round";
+  sctx.lineJoin = "round";
+  sctx.strokeStyle = "rgba(16, 16, 18, 0.9)";
+  for (const [el, opacity] of [[inkCanvas, "0"], [strokeCanvas, "1"]]) { el.style.transition = "none"; el.style.opacity = opacity; }
+
+  let total = 0;
+  for (const line of lines) for (let i = 1; i < line.length; i++) total += Math.hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]);
+  let li = 0, pi = 1, drawn = 0, start = null;
+  const step = now => {
+    if (inkCanvas._fpAnimation !== token) return;
+    if (start === null) start = now;
+    const t = Math.min(1, (now - start) / duration);
+    const target = total * t * t * (3 - 2 * t);  // ease in and out
+    sctx.beginPath();
+    while (li < lines.length && drawn < target) {
+      const line = lines[li];
+      if (pi >= line.length) { li++; pi = 1; continue; }
+      const [x0, y0] = line[pi - 1], [x1, y1] = line[pi];
+      sctx.moveTo(x0, y0);
+      sctx.lineTo(x1, y1);
+      drawn += Math.hypot(x1 - x0, y1 - y0);
+      pi++;
+    }
+    sctx.stroke();
+    if (t < 1) { requestAnimationFrame(step); return; }
+    inkCanvas.style.transition = "opacity 600ms ease";
+    strokeCanvas.style.transition = "opacity 900ms ease";
+    inkCanvas.style.opacity = "1";
+    strokeCanvas.style.opacity = "0";
+  };
+  requestAnimationFrame(step);
 }

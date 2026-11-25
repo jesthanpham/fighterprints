@@ -73,3 +73,39 @@ test("stats drive the knobs", () => {
   assert.equal(plan.seed, "aa01");
   assert.equal(plan.coreShift, lerp(16, -16, 0.5));
 });
+
+// ---------- stroke tracing ----------
+import { traceContours, orderStrokes } from "./fingerprint.js";
+
+const circleField = (w, h, cx, cy) => {
+  const f = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) f[y * w + x] = Math.hypot(x - cx, y - cy);
+  return f;
+};
+
+test("a circle traces as one closed loop at the right radius", () => {
+  const lines = traceContours(circleField(40, 40, 20, 20), 40, 40, 8);
+  assert.equal(lines.length, 1);
+  const pts = lines[0];
+  assert.ok(pts.length > 20);
+  for (const [x, y] of pts) assert.ok(Math.abs(Math.hypot(x - 20, y - 20) - 8) < 0.6);
+  const [first, last] = [pts[0], pts[pts.length - 1]];
+  assert.ok(Math.hypot(first[0] - last[0], first[1] - last[1]) < 1.5, "loop closes");
+});
+
+test("two separate rings trace as two lines", () => {
+  const w = 60, h = 30, f = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+    f[y * w + x] = Math.min(Math.hypot(x - 15, y - 15), Math.hypot(x - 45, y - 15));
+  assert.equal(traceContours(f, w, h, 6).length, 2);
+});
+
+test("an inside() filter drops lines outside the print", () => {
+  const lines = traceContours(circleField(40, 40, 20, 20), 40, 40, 8, (x) => x < 0);
+  assert.equal(lines.length, 0);
+});
+
+test("strokes are ordered from the core outward", () => {
+  const near = [[11, 10], [12, 10]], far = [[30, 30], [31, 30]], mid = [[15, 15], [16, 15]];
+  assert.deepEqual(orderStrokes([far, near, mid], 10, 10), [near, mid, far]);
+});
