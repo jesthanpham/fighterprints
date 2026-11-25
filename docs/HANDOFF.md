@@ -1,12 +1,12 @@
 # Handoff: Fighterprints (as of 2026-11-23)
 
 ## Why this exists
-Portfolio project for a **Data Engineer interview at Canada's Department of National Defence**.
+Portfolio project (now named **Fighterprints**) for a **Data Engineer interview at Canada's Department of National Defence**.
 - **Resume due:** ~2026-11-30 (needs a public GitHub link).
 - **Interview:** ~late December 2026.
 
 ## Where we are
-**Phase 1 is done and working.** Branch `phase-1` (12 commits on top of `main`), **not merged, not pushed** (there's no GitHub remote yet).
+**Phase 1 is done, merged into `main` and public at https://github.com/jesthanpham/fighterprints** (pushed 2026-11-25). Commits use GitHub's private no-reply email.
 
 | Piece | Status |
 |---|---|
@@ -30,10 +30,7 @@ node --test 'app/components/fingerprint/*.test.mjs'
 ```
 
 ## What to do next (in order)
-1. **Before the resume (~Nov 30):**
-   - Create an empty **public GitHub repo** (only you can do this from your account).
-   - Merge `phase-1` into `main`, then push.
-   - Put the repo link on the resume; a resume bullet can be drafted from the README.
+1. **Resume:** add https://github.com/jesthanpham/fighterprints to the resume (done on GitHub's side).
 2. **Phase 2 (write a new plan first):**
    - Tune archetype thresholds. For example GSP comes out as a Grappler, though most fans would call him a wrestler.
    - Write `docs/INTERVIEW.md` (60-second pitch, likely questions and answers) and `docs/ARCHITECTURE.md`.
