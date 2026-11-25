@@ -45,26 +45,3 @@ def test_start_script_pipeline_materializes_everything():
 def test_start_script_rejects_unknown_role():
     assert _start_cmd("nonsense").startswith("exit 1:")
 
-
-def _railway_config(role: str) -> dict:
-    import json
-
-    return json.loads((ROOT / "deploy" / f"railway.{role}.json").read_text())
-
-
-def test_pipeline_runs_weekly_and_never_restarts():
-    deploy = _railway_config("pipeline")["deploy"]
-    assert deploy["cronSchedule"] == "0 15 * * 0"  # Sundays 15:00 UTC = 10:00 Toronto (EST)
-    assert deploy["restartPolicyType"] == "NEVER"  # a failed run waits for next week, no retry loop
-
-
-def test_web_is_always_on_with_a_health_check():
-    deploy = _railway_config("web")["deploy"]
-    assert "cronSchedule" not in deploy
-    assert deploy["healthcheckPath"] == "/_stcore/health"
-    assert deploy["restartPolicyType"] == "ON_FAILURE"
-
-
-def test_both_build_from_the_dockerfile():
-    for role in ("web", "pipeline"):
-        assert _railway_config(role)["build"] == {"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile"}

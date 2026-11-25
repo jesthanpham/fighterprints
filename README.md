@@ -37,6 +37,8 @@ It runs on [Railway](https://railway.com) as three services built from the same 
 | **web** | The public site (`UFC_ROLE=web`) | Always on |
 | **pipeline** | One full Dagster run, every asset and check, then exits (`UFC_ROLE=pipeline`) | Railway cron, Sundays 15:00 UTC (10:00 Toronto) |
 
+Deploy with `./scripts/deploy.sh` (it uploads the committed code to both services). Railway's **Cron Runs** tab shows the schedule, past runs and a **Run now** button.
+
 Because Dagster stores its run history in that Postgres, the dashboard can run on a laptop and still show every cloud run:
 
 ```bash
