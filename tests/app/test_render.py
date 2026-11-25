@@ -57,3 +57,8 @@ def test_frame_stays_alive_and_redraws_only_changed_prints():
     assert "streamlit:componentReady" in INDEX_HTML
     assert "prefers-reduced-motion" in INDEX_HTML
     assert "shown[slot]" in INDEX_HTML               # a slot only redraws when its fighter changed
+
+
+def test_score_counts_up_with_the_drawing():
+    assert "countTo(" in INDEX_HTML
+    assert "requestAnimationFrame" in INDEX_HTML

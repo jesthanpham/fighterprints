@@ -74,11 +74,28 @@ import { drawPrint } from "./fingerprint.js";
 const send = (type, data = {}) => window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, "*");
 const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const shown = { a: null, b: null };
+const scoreEl = () => document.getElementById("score");
+let scoreRun = 0, scoreNow = 0;
+
+function countTo(score) {
+  const target = parseInt(score, 10);
+  const run = ++scoreRun;
+  if (Number.isNaN(target) || calm) { scoreEl().textContent = score; scoreNow = Number.isNaN(target) ? 0 : target; return; }
+  const from = scoreNow, start = performance.now(), duration = 1800;
+  const step = now => {
+    if (run !== scoreRun) return;
+    const t = Math.min(1, (now - start) / duration), eased = t * t * (3 - 2 * t);
+    scoreNow = Math.round(from + (target - from) * eased);
+    scoreEl().textContent = scoreNow + "%";
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 
 window.addEventListener("message", event => {
   if (!event.data || event.data.type !== "streamlit:render") return;
   const args = event.data.args;
-  document.getElementById("score").textContent = args.score;
+  countTo(args.score);
   for (const slot of ["a", "b"]) {
     const { params, fights } = args[slot];
     if (shown[slot] === params.fighter_id) continue;

@@ -26,3 +26,13 @@ def test_page_explains_when_there_is_no_data_yet(db, monkeypatch):
     at.run()
     assert not at.exception
     assert any("No fighter data yet" in i.value for i in at.info)
+
+
+def test_streamlit_chrome_is_hidden_and_favicon_exists(built_marts, monkeypatch):
+    monkeypatch.setenv("UFC_DATABASE_URL", TEST_DATABASE_URL)
+    at = AppTest.from_file(str(PAGE), default_timeout=30)
+    at.run()
+    css = " ".join(m.value for m in at.markdown)
+    for hidden in ('stHeader', 'stToolbar', 'footer'):
+        assert hidden in css
+    assert (PAGE.parent / "static" / "favicon.png").exists()
