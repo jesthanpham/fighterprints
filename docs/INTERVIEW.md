@@ -12,7 +12,7 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 >
 > The hardest part was identity. The stats files name fighters but don't identify them, and names collide: there are two Bruno Silvas. I wrote a rule-based matcher that resolves 99.94% of 18,000 appearances and logs exactly how each one was matched.
 >
-> Then dbt cleans and models it in tested layers, Dagster orchestrates it weekly with lineage and freshness checks, and the output feeds a web page that turns every fighter's career into a generated fingerprint and scores how similar two fighters are. Every ridge traces back to tested data."
+> Then dbt cleans and models it in tested layers, Dagster orchestrates it weekly with lineage and freshness checks, and the output feeds a web page that turns every fighter's career into a generated fingerprint and scores how similar two fighters are. Every ridge traces back to tested data. It's live: the pipeline re-runs in the cloud every Sunday and the site updates itself."
 
 **If they only remember one thing:** *I take messy data from a system I don't control, prove it's correct, and make it usable.*
 
@@ -21,15 +21,15 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 ## 2. The demo (about 3 minutes)
 
 **Before the interview:**
-- [ ] Open **OrbStack** (Docker has to be running).
-- [ ] `cd ufc-fingerprints && docker compose up -d`
-- [ ] Open http://localhost:3000 (Dagster) and http://localhost:8501 (app) once, so they're warm.
-- [ ] Have the README screenshot ready as a backup if anything won't start.
+- [ ] Open the live site once so it's warm: https://fighterprints.up.railway.app
+- [ ] Start the dashboard against the cloud: `./scripts/cloud-dashboard.sh`, then open http://localhost:3001.
+- [ ] Backup if the internet is bad: open **OrbStack**, run `docker compose up -d`, and use http://localhost:3000 and http://localhost:8501.
+- [ ] Have the README screenshot ready as a last resort.
 
 **Script:**
 1. **Dagster → Lineage** (http://localhost:3000). *"Here's the whole pipeline as a graph: the download, one asset per source file, identity resolution, then dbt's staging, intermediate and mart layers. Each box knows what it depends on."*
-2. **Click a recent run.** *"Every run is logged: how many new file versions arrived, rows loaded, how many names each matching rule resolved. The freshness check warns me if the upstream source stops updating."*
-3. **The app** (http://localhost:8501). Pick **Khabib Nurmagomedov** vs **Islam Makhachev** (86%), then swap one for **Max Holloway** (49%). *"Teammates with the same style score high; a wrestler against a volume striker scores low."*
+2. **Click a recent run.** *"These are the real Sunday runs from the cloud; Dagster keeps its history in the same Postgres. Every run is logged: how many new file versions arrived, rows loaded, how many names each matching rule resolved. The freshness check warns me if the upstream source stops updating."*
+3. **The live site** (https://fighterprints.up.railway.app). Pick **Khabib Nurmagomedov** vs **Islam Makhachev** (86%), then swap one for **Max Holloway** (49%). *"Teammates with the same style score high; a wrestler against a volume striker scores low."*
 4. **Close:** *"The page only reads three tables from the final layer. That's the contract between the pipeline and the app, and it's tested."*
 
 ---
@@ -94,8 +94,11 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 **What would you change to run this in production?**
 "CI on every pull request running the tests. Alerts to email or Teams on failures. A read-only database user for the app; it currently uses the pipeline's user. Secrets in a vault instead of defaults. And probably a managed cloud database. Government of Canada teams commonly use Azure, and the design would move over as-is."
 
-**What if the laptop's off on Sunday?**
-"The schedule just doesn't fire. But each run compares file hashes instead of looking at 'the last 7 days', so the next run catches up on everything it missed."
+**Where does it run?**
+"On Railway, as three services from one Docker image: Postgres, the website, and a pipeline job that Railway's cron starts every Sunday. The job runs every asset and check once, then exits, so I'm not paying to keep a scheduler awake all week. Dagster's run history lives in the same Postgres, so I can open the dashboard on my laptop and see every cloud run."
+
+**What if a Sunday run is missed or fails?**
+"Each run compares file hashes instead of looking at 'the last 7 days', so the next run catches up on everything it missed. A failed run leaves the previous good data in place, and the failure shows in Railway's logs and in Dagster's run history."
 
 ### About you
 
@@ -127,7 +130,7 @@ Be straight about it: *"I designed it and built it with an AI coding assistant, 
 - **6** source files, about **12 MB**; a full rebuild takes about a minute
 - **33** dbt data tests + **6** dbt unit tests, **59** Python tests, **6** renderer tests
 - Retries: **3** · shrink guard: **90%** · freshness: **7 days** · unresolved error threshold: **1%** · fuzzy threshold: **92**
-- Schedule: Sundays 10:00, Toronto time
+- Schedule: Sundays 15:00 UTC (10:00 Toronto), Railway cron · hosting: about $4/month of Railway usage
 
 ---
 

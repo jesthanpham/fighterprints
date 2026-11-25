@@ -2,6 +2,8 @@
 
 **A data pipeline that turns every UFC fighter's career into a generated fingerprint.**
 
+**Live:** https://fighterprints.up.railway.app · the pipeline re-runs in the cloud every Sunday.
+
 It ingests the full UFC stats history (798 events, 9,000+ fights, 42,000+ fighter-rounds), cleans and models it with tested dbt layers, resolves who's who across files that only name fighters, and publishes a data contract that a web page renders into a realistic inked fingerprint. Every ridge on the print traces back to a row in the database.
 
 ![Khabib Nurmagomedov vs Max Holloway](docs/img/compare.jpg)
@@ -24,6 +26,22 @@ Then:
 2. Open the app at http://localhost:8501 and pick any two fighters to see their prints and how similar they are.
 
 The pipeline then refreshes itself every Sunday at 10:00 (Toronto time), after Saturday-night events.
+
+## In the cloud
+
+It runs on [Railway](https://railway.com) as three services built from the same Docker image:
+
+| Service | What it does | When |
+|---|---|---|
+| **Postgres** | The warehouse: snapshots, source tables, dbt layers, and Dagster's run history | Always on |
+| **web** | The public site (`UFC_ROLE=web`) | Always on |
+| **pipeline** | One full Dagster run, every asset and check, then exits (`UFC_ROLE=pipeline`) | Railway cron, Sundays 15:00 UTC (10:00 Toronto) |
+
+Because Dagster stores its run history in that Postgres, the dashboard can run on a laptop and still show every cloud run:
+
+```bash
+./scripts/cloud-dashboard.sh   # then open http://localhost:3001
+```
 
 ## How the pipeline works
 

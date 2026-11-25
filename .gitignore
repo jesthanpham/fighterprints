@@ -9,3 +9,5 @@ dbt/logs/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+docker/dagster-cloud/*
+!docker/dagster-cloud/dagster.yaml

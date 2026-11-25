@@ -8,6 +8,8 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 ## Where we are
 **Phase 1 is done, merged into `main` and public at https://github.com/jesthanpham/fighterprints** (pushed 2026-11-25). Commits use GitHub's private no-reply email.
 
+**Live since 2026-11-25:** https://fighterprints.up.railway.app on Railway (project `fighterprints`: Postgres + `web` + `pipeline` cron job, Sundays 15:00 UTC). The Dagster dashboard runs locally against the cloud DB via `./scripts/cloud-dashboard.sh`. The Discord bot project on the same account is untouched.
+
 | Piece | Status |
 |---|---|
 | Pipeline: download 6 CSVs → snapshots → header contract + shrink guard → `src` tables | ✅ |
