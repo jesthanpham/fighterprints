@@ -18,3 +18,6 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 # build the dbt manifest Dagster reads (parsing needs no database)
 RUN dbt parse --project-dir dbt --profiles-dir dbt && mkdir -p /dagster_home
+
+# Railway runs one image as two services; UFC_ROLE (web | pipeline) picks the job. Compose overrides this.
+CMD ["sh", "docker/start.sh"]

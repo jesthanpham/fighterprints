@@ -7,7 +7,7 @@ ufc:
       port: "{{ env_var('UFC_DB_PORT', '5433') | int }}"
       user: "{{ env_var('UFC_DB_USER', 'ufc') }}"
       password: "{{ env_var('UFC_DB_PASSWORD', 'ufc') }}"
-      dbname: ufc
+      dbname: "{{ env_var('UFC_DB_NAME', 'ufc') }}"
       schema: public
       threads: 4
     test:

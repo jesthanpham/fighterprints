@@ -297,6 +297,19 @@ wheels = [
 ]
 
 [[package]]
+name = "dagster-postgres"
+version = "0.29.31"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dagster" },
+    { name = "psycopg2-binary" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c3/8d/7a11dbafb20e977dc9cf50dbd54e86c1b6c0d9fa0adebf084303785d5cc9/dagster_postgres-0.29.31.tar.gz", hash = "sha256:cd8c452faa94ed19c83dfdbfa59fd90d847c41034bc7fef2783effad82d85523", size = 396079, upload-time = "2026-11-19T21:57:45.951Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/72/7f/6c86e94167298b41ce2f96ab8e243931bf9059762a0f7e00025765addf71/dagster_postgres-0.29.31-py3-none-any.whl", hash = "sha256:7a1ac629bb356b10a9e56a556c32545e9678b266042e119383bae324cf41f5ac", size = 25681, upload-time = "2026-11-19T21:57:44.615Z" },
+]
+
+[[package]]
 name = "dagster-shared"
 version = "1.13.31"
 source = { registry = "https://pypi.org/simple" }
@@ -1842,6 +1855,7 @@ source = { editable = "." }
 dependencies = [
     { name = "dagster" },
     { name = "dagster-dbt" },
+    { name = "dagster-postgres" },
     { name = "dagster-webserver" },
     { name = "dbt-core" },
     { name = "dbt-postgres" },
@@ -1862,6 +1876,7 @@ dev = [
 requires-dist = [
     { name = "dagster", specifier = ">=1.13.31" },
     { name = "dagster-dbt", specifier = ">=0.29.31" },
+    { name = "dagster-postgres", specifier = ">=0.29.31" },
     { name = "dagster-webserver", specifier = ">=1.13.31" },
     { name = "dbt-core", specifier = ">=1.8" },
     { name = "dbt-postgres", specifier = ">=1.8" },

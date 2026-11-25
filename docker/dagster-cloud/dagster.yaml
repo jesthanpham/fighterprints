@@ -1,0 +1,8 @@
+# Dagster instance for the cloud: runs, events and schedules live in the Railway Postgres,
+# so the local dashboard (pointed at the same database) shows every cloud run.
+storage:
+  postgres:
+    postgres_url:
+      env: DAGSTER_PG_URL
+telemetry:
+  enabled: false
