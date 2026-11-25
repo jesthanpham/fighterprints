@@ -105,6 +105,8 @@ Each fighter's print is grown live in the browser: a ridge-direction field (the 
 | Print size | Reach |
 | Fine details | Seeded from the fighter's ID: deterministic and unique |
 
+When you pick a fighter, a pen first traces the print's actual ridge edges (found by marching squares over the ridge field), working out from the core, then the ink settles in.
+
 Missing reach or stance (common for early-era fighters) falls back to a flagged default, so a print never fails.
 
 ## How similarity is scored
