@@ -1,1 +1,1 @@
-"""UFC Style Fingerprints pipeline."""
+"""Fighterprints: the UFC data pipeline behind the generated fingerprints."""

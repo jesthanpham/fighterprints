@@ -1,4 +1,4 @@
-# UFC Style Fingerprints
+# Fighterprints
 
 **A data pipeline that turns every UFC fighter's career into a generated fingerprint.**
 

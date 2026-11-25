@@ -1,4 +1,4 @@
-"""UFC Style Fingerprints: pick two fighters, see their prints and how similar they are."""
+"""Fighterprints: pick two fighters, see their prints and how similar they are."""
 
 import sys
 from pathlib import Path
@@ -12,7 +12,7 @@ from app.data import default_pair, has_data, list_fighters, print_payload, style
 from app.render import prints_html
 from ufc.db import connect
 
-st.set_page_config(page_title="UFC Style Fingerprints", layout="centered")
+st.set_page_config(page_title="Fighterprints", layout="centered")
 
 
 @st.cache_resource
@@ -24,7 +24,7 @@ def get_conn():
 
 conn = get_conn()
 
-st.title("Style Fingerprints")
+st.title("Fighterprints")
 
 if not has_data(conn):
     st.info(

@@ -1,7 +1,7 @@
 [project]
 name = "ufc"
 version = "0.1.0"
-description = "UFC Style Fingerprints: a data pipeline that turns fight stats into generated fingerprints"
+description = "Fighterprints: a data pipeline that turns fight stats into generated fingerprints"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [

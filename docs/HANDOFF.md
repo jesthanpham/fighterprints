@@ -1,4 +1,4 @@
-# Handoff: UFC Style Fingerprints (as of 2026-11-23)
+# Handoff: Fighterprints (as of 2026-11-23)
 
 ## Why this exists
 Portfolio project for a **Data Engineer interview at Canada's Department of National Defence**.

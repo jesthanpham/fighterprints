@@ -1,4 +1,4 @@
-# Interview prep: UFC Style Fingerprints
+# Interview prep: Fighterprints
 
 For the Data Engineer interview at the Department of National Defence. Read it out loud a few times; the answers are written the way you'd say them.
 
