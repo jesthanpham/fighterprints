@@ -10,7 +10,7 @@ It ingests the full UFC stats history (798 events, 9,000+ fights, 42,000+ fighte
 
 ![Khabib Nurmagomedov vs Max Holloway](docs/img/compare.jpg)
 
-*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease): a 48% style match. The site shows only the prints and the score; how to read them is below.*
+*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease): a 48% style match. By default the site shows only the prints and the score; **Forensic view** shows the working (below).*
 
 ---
 
@@ -112,6 +112,17 @@ Missing reach or stance (common for early-era fighters) falls back to a flagged 
 Each fighter is placed on 9 style dimensions as a **UFC-wide percentile** (the share of established fighters at or below them): striking volume, strikes absorbed, accuracy, defense, takedowns, control time, submission attempts, finish rate and where they aim (share of strikes to the head). Percentiles put very different stats on the same 0–100 scale, so no single stat dominates.
 
 **Similarity = 100 − the average percentile gap**, minus 10 if their style labels differ. Fighters without enough round stats to compare on at least 4 dimensions get no score. For example, Khabib vs Islam Makhachev scores 85%, Khabib vs Max Holloway 48%. The site labels it **style match**: it measures how two fighters fight, not how alike the drawings look.
+
+## Forensic view
+
+The default page explains nothing: two prints and one number. The **Forensic view** button under the prints turns on the audit trail:
+
+- **Every fight appears as a mark** on the print. Shape shows the result (circle win, square loss, diamond draw or no contest) and colour the method (red KO/TKO, blue submission, grey decision).
+- **Hovering a mark** (magnifying-glass cursor) names the fight behind it: opponent, event, date, round and time.
+- **How each print is made:** a table of every print feature, the stat that drives it and both fighters' values, with missing stats shown as the default that stood in.
+- **How the style match is made:** each style stat's UFC percentile for both fighters and the gap, then the average gap, the style-label penalty and the final score.
+
+Both tables come from the same code that draws the prints and computes the score (`explainRows` in the renderer, `match_breakdown` in `app/data.py`), so the explanation can't drift from what's shown.
 
 ## Project layout
 

@@ -30,7 +30,8 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 1. **Dagster → Lineage** (http://localhost:3000). *"Here's the whole pipeline as a graph: the download, one asset per source file, identity resolution, then dbt's staging, intermediate and mart layers. Each box knows what it depends on."*
 2. **Railway → pipeline → Cron Runs.** *"These are the real Sunday runs in the cloud; I can also click Run now."* Then back in Dagster, click a run: *"Every run is logged: how many new file versions arrived, rows loaded, how many names each matching rule resolved. The freshness check warns me if the upstream source stops updating."*
 3. **The live site** (https://fighterprints.up.railway.app). Pick **Khabib Nurmagomedov** vs **Islam Makhachev** (85%), then swap one for **Max Holloway** (48%). Each print draws itself as you pick. *"Teammates with the same style score high; a wrestler against a volume striker scores low."*
-4. **Close:** *"The page only reads three tables from the final layer. That's the contract between the pipeline and the app, and it's tested."*
+4. **Forensic view.** Click **Forensic view** under the prints. Every fight appears as a mark: shape for the result, colour for the method. Hover one: *"This mark is his first UFC fight: the opponent, the event, the round and time. Every mark traces back to a row in the database."* Scroll to the two tables: *"This is how each print is made, stat by stat, and this is the style match worked out line by line. The table and the big number come from the same function, so they can't disagree."*
+5. **Close:** *"The page only reads three tables from the final layer. That's the contract between the pipeline and the app, and it's tested."*
 
 ---
 
@@ -89,10 +90,13 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 "Staging makes raw data trustworthy, intermediate joins it into one row per fighter per fight, and marts are what consumers read. The app only touches three mart tables, so I can rework anything upstream without breaking it."
 
 **How does the similarity score work?**
-"Each fighter is ranked against the whole UFC on 9 style stats as percentiles, so very different stats share one 0–100 scale. Similarity is 100 minus the average gap, minus 10 if their style labels differ. If they share fewer than 4 stats, there's no score instead of a misleading one."
+"Each fighter is ranked against the whole UFC on 9 style stats as percentiles, so very different stats share one 0–100 scale. Similarity is 100 minus the average gap, minus 10 if their style labels differ. If they share fewer than 4 stats, there's no score instead of a misleading one. On the site, Forensic view shows the working: each stat's percentile for both fighters, the gaps, the average, the penalty and the result."
+
+**Why is the explanation behind a toggle?**
+"The default view is the product: two prints and one number, nothing to read. Forensic view is the audit trail for anyone who wants to check it, the same idea as a dashboard that lets you drill down to the source rows. Both views read the same tables."
 
 **What would you change to run this in production?**
-"CI on every pull request running the tests. Alerts to email or Teams on failures. A read-only database user for the app; it currently uses the pipeline's user. Secrets in a vault instead of defaults. And probably a managed cloud database. Government of Canada teams commonly use Azure, and the design would move over as-is."
+"CI already runs lint and every test on each push; I'd add branch protection so nothing merges while it's red. Alerts to email or Teams on failures. A read-only database user for the app; it currently uses the pipeline's user. Secrets in a vault instead of defaults. And probably a managed cloud database. Government of Canada teams commonly use Azure, and the design would move over as-is."
 
 **Where does it run?**
 "On Railway, as three services from one Docker image: Postgres, the website, and a pipeline job that Railway's cron starts every Sunday. The job runs every asset and check once, then exits, so I'm not paying to keep a scheduler awake all week. The database has no public address; only those services can reach it. For exploring the pipeline, I run the identical stack locally in Docker."
@@ -128,7 +132,7 @@ Be straight about it: *"I designed it and built it with an AI coding assistant, 
 - **798** events (March 1994 → November 2026), **9,015** fights, **42,334** fighter-rounds, **2,778** fighters with prints
 - **18,030** fighter appearances resolved; **99.94%** matched; **10** unresolved
 - **6** source files, about **12 MB**; a full rebuild takes about a minute
-- **33** dbt data tests + **6** dbt unit tests, **59** Python tests, **6** renderer tests
+- **33** dbt data tests + **6** dbt unit tests, **77** Python tests, **15** renderer tests, all run by CI on every push
 - Retries: **3** · shrink guard: **90%** · freshness: **7 days** · unresolved error threshold: **1%** · fuzzy threshold: **92**
 - Schedule: Sundays 15:00 UTC (10:00 Toronto), Railway cron · hosting: about $4/month of Railway usage
 
@@ -139,7 +143,5 @@ Be straight about it: *"I designed it and built it with an AI coding assistant, 
 Saying these first comes across as maturity, not weakness.
 
 - **The style labels need tuning.** GSP comes out as a Grappler. The thresholds are simple percentile rules on purpose, so they're explainable.
-- **The prints are drawn in the browser**, so the drawing logic is in the page source. Rendering them in the pipeline would hide it.
 - **If one file fails mid-run, files loaded earlier in that run stay loaded.** Each file is internally consistent and the run fails visibly, but a stricter design would stage all six and swap them in together.
 - **The app uses the pipeline's database user.** In production it would get a read-only user.
-- **No CI yet.** The tests run locally; GitHub Actions would be next.
