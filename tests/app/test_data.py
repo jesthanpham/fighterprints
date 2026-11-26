@@ -21,7 +21,7 @@ def test_duplicate_names_are_distinguishable(built_marts):
 
 def vector(value, archetype="Striker", **overrides):
     dims = ["pace_pct", "absorbed_pct", "accuracy_pct", "defense_pct",
-            "takedown_pct", "control_pct", "submission_pct", "finish_pct"]
+            "takedown_pct", "control_pct", "submission_pct", "finish_pct", "aim_pct"]
     return {"archetype": archetype, **dict.fromkeys(dims, value), **overrides}
 
 
@@ -46,6 +46,11 @@ def test_only_shared_dimensions_count():
     a = vector(0.5, pace_pct=None, absorbed_pct=None)
     b = vector(0.5, pace_pct=0.0, absorbed_pct=0.0)
     assert match_score(a, b) == 100
+
+
+def test_where_they_aim_counts():
+    # identical except where they aim their strikes: 0.9 gap on 1 of 9 dimensions -> 90
+    assert match_score(vector(0.5, aim_pct=0.05), vector(0.5, aim_pct=0.95)) == 90
 
 
 def test_too_few_shared_dimensions_gives_no_score():

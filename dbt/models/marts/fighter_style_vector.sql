@@ -1,4 +1,4 @@
--- Each fighter's style on 8 dimensions, as a UFC-wide percentile: the share of established fighters
+-- Each fighter's style on 9 dimensions, as a UFC-wide percentile: the share of established fighters
 -- (not small_sample) at or below their value. Percentiles make different stats comparable, so the
 -- similarity score isn't dominated by whichever stat has the biggest numbers.
 {% set dims = {
@@ -10,6 +10,7 @@
     'control_pct': 'ctrl_share',
     'submission_pct': 'sub_att_per15',
     'finish_pct': 'finish_rate',
+    'aim_pct': 'head_pct',
 } %}
 
 with fighters as (

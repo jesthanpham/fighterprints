@@ -74,7 +74,7 @@ def print_payload(conn: psycopg.Connection, fighter_id: str) -> dict:
 
 DIMENSIONS = [
     "pace_pct", "absorbed_pct", "accuracy_pct", "defense_pct",
-    "takedown_pct", "control_pct", "submission_pct", "finish_pct",
+    "takedown_pct", "control_pct", "submission_pct", "finish_pct", "aim_pct",
 ]
 MIN_SHARED_DIMENSIONS = 4
 ARCHETYPE_PENALTY = 10

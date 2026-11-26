@@ -1,0 +1,46 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ufc
+          POSTGRES_PASSWORD: ufc
+          POSTGRES_DB: ufc
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U ufc -d ufc"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create the test database
+        run: PGPASSWORD=ufc psql -h localhost -p 5433 -U ufc -d ufc -c "create database ufc_test"
+
+      - uses: astral-sh/setup-uv@v6
+      - name: Install Python dependencies
+        run: uv sync --frozen
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Lint
+        run: uv run ruff check src tests app scripts
+
+      - name: Python + dbt tests
+        run: uv run pytest -q
+
+      - name: Renderer tests
+        run: node --test 'app/components/fingerprint/*.test.mjs'

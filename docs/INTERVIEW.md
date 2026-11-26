@@ -22,14 +22,14 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 
 **Before the interview:**
 - [ ] Open the live site once so it's warm: https://fighterprints.up.railway.app
-- [ ] Start the dashboard against the cloud: `./scripts/cloud-dashboard.sh`, then open http://localhost:3001.
-- [ ] Backup if the internet is bad: open **OrbStack**, run `docker compose up -d`, and use http://localhost:3000 and http://localhost:8501.
+- [ ] Open **OrbStack**, run `docker compose up -d`, and open Dagster at http://localhost:3000 (the pipeline graph).
+- [ ] Open Railway → fighterprints → **pipeline** → **Cron Runs** (the real Sunday runs, plus **Run now**).
 - [ ] Have the README screenshot ready as a last resort.
 
 **Script:**
 1. **Dagster → Lineage** (http://localhost:3000). *"Here's the whole pipeline as a graph: the download, one asset per source file, identity resolution, then dbt's staging, intermediate and mart layers. Each box knows what it depends on."*
-2. **Click a recent run.** *"These are the real Sunday runs from the cloud; Dagster keeps its history in the same Postgres. Every run is logged: how many new file versions arrived, rows loaded, how many names each matching rule resolved. The freshness check warns me if the upstream source stops updating."*
-3. **The live site** (https://fighterprints.up.railway.app). Pick **Khabib Nurmagomedov** vs **Islam Makhachev** (86%), then swap one for **Max Holloway** (49%). *"Teammates with the same style score high; a wrestler against a volume striker scores low."*
+2. **Railway → pipeline → Cron Runs.** *"These are the real Sunday runs in the cloud; I can also click Run now."* Then back in Dagster, click a run: *"Every run is logged: how many new file versions arrived, rows loaded, how many names each matching rule resolved. The freshness check warns me if the upstream source stops updating."*
+3. **The live site** (https://fighterprints.up.railway.app). Pick **Khabib Nurmagomedov** vs **Islam Makhachev** (85%), then swap one for **Max Holloway** (48%). Each print draws itself as you pick. *"Teammates with the same style score high; a wrestler against a volume striker scores low."*
 4. **Close:** *"The page only reads three tables from the final layer. That's the contract between the pipeline and the app, and it's tested."*
 
 ---
@@ -89,13 +89,13 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 "Staging makes raw data trustworthy, intermediate joins it into one row per fighter per fight, and marts are what consumers read. The app only touches three mart tables, so I can rework anything upstream without breaking it."
 
 **How does the similarity score work?**
-"Each fighter is ranked against the whole UFC on 8 style stats as percentiles, so very different stats share one 0–100 scale. Similarity is 100 minus the average gap, minus 10 if their style labels differ. If they share fewer than 4 stats, there's no score instead of a misleading one."
+"Each fighter is ranked against the whole UFC on 9 style stats as percentiles, so very different stats share one 0–100 scale. Similarity is 100 minus the average gap, minus 10 if their style labels differ. If they share fewer than 4 stats, there's no score instead of a misleading one."
 
 **What would you change to run this in production?**
 "CI on every pull request running the tests. Alerts to email or Teams on failures. A read-only database user for the app; it currently uses the pipeline's user. Secrets in a vault instead of defaults. And probably a managed cloud database. Government of Canada teams commonly use Azure, and the design would move over as-is."
 
 **Where does it run?**
-"On Railway, as three services from one Docker image: Postgres, the website, and a pipeline job that Railway's cron starts every Sunday. The job runs every asset and check once, then exits, so I'm not paying to keep a scheduler awake all week. Dagster's run history lives in the same Postgres, so I can open the dashboard on my laptop and see every cloud run."
+"On Railway, as three services from one Docker image: Postgres, the website, and a pipeline job that Railway's cron starts every Sunday. The job runs every asset and check once, then exits, so I'm not paying to keep a scheduler awake all week. The database has no public address; only those services can reach it. For exploring the pipeline, I run the identical stack locally in Docker."
 
 **What if a Sunday run is missed or fails?**
 "Each run compares file hashes instead of looking at 'the last 7 days', so the next run catches up on everything it missed. A failed run leaves the previous good data in place, and the failure shows in Railway's logs and in Dagster's run history."

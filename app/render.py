@@ -61,11 +61,15 @@ INDEX_HTML = """<!doctype html>
   .score .pct { font-size: clamp(34px, 7vw, 56px); font-weight: 700; letter-spacing: -0.02em;
                 font-variant-numeric: tabular-nums; }
   .score .label { color: #6b675f; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
+  @media (max-width: 560px) {
+    .row { flex-direction: column; gap: 8px; }
+    figure { width: min(300px, 78vw); }
+  }
 </style></head>
 <body>
 <div class="row">
   <figure id="a"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
-  <div class="score"><div class="pct" id="score"></div><div class="label">similar</div></div>
+  <div class="score"><div class="pct" id="score"></div><div class="label">style match</div></div>
   <figure id="b"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
 </div>
 <script type="module">

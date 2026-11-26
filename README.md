@@ -1,5 +1,7 @@
 # Fighterprints
 
+[![tests](https://github.com/jesthanpham/fighterprints/actions/workflows/ci.yml/badge.svg)](https://github.com/jesthanpham/fighterprints/actions/workflows/ci.yml)
+
 **A data pipeline that turns every UFC fighter's career into a generated fingerprint.**
 
 **Live:** https://fighterprints.up.railway.app · the pipeline re-runs in the cloud every Sunday.
@@ -8,7 +10,7 @@ It ingests the full UFC stats history (798 events, 9,000+ fights, 42,000+ fighte
 
 ![Khabib Nurmagomedov vs Max Holloway](docs/img/compare.jpg)
 
-*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease), 49% similar. The site shows only the prints and the score; how to read them is below.*
+*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease): a 48% style match. The site shows only the prints and the score; how to read them is below.*
 
 ---
 
@@ -39,11 +41,7 @@ It runs on [Railway](https://railway.com) as three services built from the same 
 
 Deploy with `./scripts/deploy.sh` (it uploads the committed code to both services). Railway's **Cron Runs** tab shows the schedule, past runs and a **Run now** button.
 
-Because Dagster stores its run history in that Postgres, the dashboard can run on a laptop and still show every cloud run:
-
-```bash
-./scripts/cloud-dashboard.sh   # then open http://localhost:3001
-```
+The database has no public address: only the two services inside Railway's private network can reach it. To explore the pipeline in Dagster's UI, run the same stack locally with `docker compose up` (see **Run it**).
 
 ## How the pipeline works
 
@@ -111,9 +109,9 @@ Missing reach or stance (common for early-era fighters) falls back to a flagged 
 
 ## How similarity is scored
 
-Each fighter is placed on 8 style dimensions as a **UFC-wide percentile** (the share of established fighters at or below them): striking volume, strikes absorbed, accuracy, defense, takedowns, control time, submission attempts and finish rate. Percentiles put very different stats on the same 0–100 scale, so no single stat dominates.
+Each fighter is placed on 9 style dimensions as a **UFC-wide percentile** (the share of established fighters at or below them): striking volume, strikes absorbed, accuracy, defense, takedowns, control time, submission attempts, finish rate and where they aim (share of strikes to the head). Percentiles put very different stats on the same 0–100 scale, so no single stat dominates.
 
-**Similarity = 100 − the average percentile gap**, minus 10 if their style labels differ. Fighters without enough round stats to compare on at least 4 dimensions get no score. For example, Khabib vs Islam Makhachev scores 86%, Khabib vs Max Holloway 49%.
+**Similarity = 100 − the average percentile gap**, minus 10 if their style labels differ. Fighters without enough round stats to compare on at least 4 dimensions get no score. For example, Khabib vs Islam Makhachev scores 85%, Khabib vs Max Holloway 48%. The site labels it **style match**: it measures how two fighters fight, not how alike the drawings look.
 
 ## Project layout
 

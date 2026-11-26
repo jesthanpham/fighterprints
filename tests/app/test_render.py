@@ -62,3 +62,11 @@ def test_frame_stays_alive_and_redraws_only_changed_prints():
 def test_score_counts_up_with_the_drawing():
     assert "countTo(" in INDEX_HTML
     assert "requestAnimationFrame" in INDEX_HTML
+
+
+def test_score_is_labelled_style_match():
+    assert ">style match<" in INDEX_HTML and ">similar<" not in INDEX_HTML
+
+
+def test_prints_stack_on_phones():
+    assert "@media (max-width: 560px)" in INDEX_HTML

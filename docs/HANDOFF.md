@@ -8,7 +8,7 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 ## Where we are
 **Phase 1 is done, merged into `main` and public at https://github.com/jesthanpham/fighterprints** (pushed 2026-11-25). Commits use GitHub's private no-reply email.
 
-**Live since 2026-11-25:** https://fighterprints.up.railway.app on Railway (project `fighterprints`: Postgres + `web` + `pipeline` cron job, Sundays 15:00 UTC). The Dagster dashboard runs locally against the cloud DB via `./scripts/cloud-dashboard.sh`. The Discord bot project on the same account is untouched. The cron (`0 15 * * 0`) is set in the Railway dashboard (pipeline → Settings → Cron Schedule); Railway ignores railway.json on CLI uploads. Deploy code changes with `./scripts/deploy.sh`.
+**Live since 2026-11-25:** https://fighterprints.up.railway.app on Railway (project `fighterprints`: Postgres + `web` + `pipeline` cron job, Sundays 15:00 UTC). The database has no public address (public access was tried and switched off); Dagster's UI runs locally via `docker compose up`, and cloud runs are visible in Railway's Cron Runs tab. The Discord bot project on the same account is untouched. The cron (`0 15 * * 0`) is set in the Railway dashboard (pipeline → Settings → Cron Schedule); Railway ignores railway.json on CLI uploads. Deploy code changes with `./scripts/deploy.sh`.
 
 | Piece | Status |
 |---|---|

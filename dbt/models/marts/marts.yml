@@ -44,7 +44,7 @@ models:
   - name: fighter_style_vector
     description: >
       Each fighter's style as UFC-wide percentiles (share of established fighters at or below their value)
-      on 8 dimensions. Feeds the similarity score. NULL where the fighter has no round stats.
+      on 9 dimensions. Feeds the similarity score. NULL where the fighter has no round stats.
     columns:
       - name: fighter_id
         data_tests: [unique, not_null]
