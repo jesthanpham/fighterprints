@@ -218,7 +218,64 @@ export function orderStrokes(lines, cx, cy) {
 // ---------------- inking + overlay ----------------
 const MARK_COLOR = { KO_TKO: "#d62828", SUB: "#2563eb", DEC: "#6b7280", OTHER: "#6b7280" };
 const RESULT_WORD = { W: "Win", L: "Loss", D: "Draw", NC: "No contest" };
-const METHOD_WORD = { KO_TKO: "KO/TKO", SUB: "Submission", DEC: "Decision", OTHER: "Other" };
+const METHOD_PHRASE = { KO_TKO: "by KO/TKO", SUB: "by submission", DEC: "by decision" };
+
+/** One forensic mark: shape = result (circle win, square loss, diamond other), colour = method. */
+export function markSvg(fight, i, x, y) {
+  const c = MARK_COLOR[fight.method_group] ?? "#6b7280";
+  const shape = fight.result === "W"
+    ? `<circle cx="${x}" cy="${y}" r="6" fill="none" stroke="${c}" stroke-width="2"/>`
+    : fight.result === "L"
+      ? `<rect x="${x - 5.5}" y="${y - 5.5}" width="11" height="11" fill="none" stroke="${c}" stroke-width="2"/>`
+      : `<path d="M${x} ${y - 7} L${x + 7} ${y} L${x} ${y + 7} L${x - 7} ${y} Z" fill="none" stroke="${c}" stroke-width="2"/>`;
+  return `<g class="m" data-i="${i}">${shape}</g>`;
+}
+
+/** Why a mark is where it is: the fight that put it there. */
+export function markNote(fight, i, n) {
+  const result = RESULT_WORD[fight.result] ?? "Result unknown";
+  const heading = ["W", "L"].includes(fight.result) && METHOD_PHRASE[fight.method_group]
+    ? `${result} ${METHOD_PHRASE[fight.method_group]}` : result;
+  const lines = [];
+  if (fight.opponent_name) lines.push(`vs ${fight.opponent_name}`);
+  const when = [fight.event_name, fight.event_date].filter(Boolean).join(" · ");
+  if (when) lines.push(when);
+  if (fight.end_round != null && fight.end_time_s != null) {
+    const s = Number(fight.end_time_s);
+    lines.push(`Round ${fight.end_round}, ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
+  }
+  lines.push(`Fight ${i + 1} of ${n}. Every UFC fight leaves one mark, oldest nearest the core.`);
+  return { heading, color: MARK_COLOR[fight.method_group] ?? "#6b7280", lines };
+}
+
+/** The forensic explainer: each print feature, the stat behind it, and this fighter's value. */
+export function explainRows(params, fights) {
+  const plan = printPlan(params, fights);
+  const num = v => (v == null ? "unknown" : Number(v).toFixed(1));
+  const pct = v => (v == null ? "unknown" : `${Math.round(Number(v) * 100)}%`);
+  const stance = plan.flags.includes("stance_missing") ? null : params.stance;
+  const turn = { Southpaw: "mirrored", Switch: "upright", Orthodox: "tilted" };
+  return [
+    { feature: "Pattern", source: "Style label", effect: "each style has its own ridge pattern",
+      value: `${params.archetype ?? "Balanced"} → ${plan.pattern.replace("_", " ")}` },
+    { feature: "Ridge spacing", source: "Sig. strikes landed per minute", effect: "busier → tighter ridges",
+      value: num(params.sig_landed_per_min) },
+    { feature: "Ink darkness", source: "Finish rate", effect: "more finishes → darker ink",
+      value: pct(params.finish_rate ?? 0) },
+    { feature: "Worn ridges", source: "Sig. strikes absorbed per minute", effect: "more absorbed → more worn",
+      value: num(params.sig_absorbed_per_min) },
+    { feature: "Print size", source: "Reach", effect: "longer reach → bigger print",
+      value: plan.flags.includes("reach_missing") ? `unknown (${DEFAULTS.reach_in}" used)` : `${Number(params.reach_in)}"` },
+    { feature: "Orientation", source: "Stance", effect: "southpaws mirrored, switch upright",
+      value: stance ? `${stance} → ${turn[stance]}` : `unknown (${DEFAULTS.stance} used)` },
+    { feature: "Core height", source: "Share of strikes aimed at the head", effect: "more head strikes → core sits higher",
+      value: pct(params.head_pct) },
+    { feature: "Creases", source: "Losses by KO/TKO", effect: "one crease per KO/TKO loss",
+      value: String(plan.creaseCount) },
+    { feature: "Marks", source: "UFC fights", effect: "one mark per fight (hover one)",
+      value: String(plan.markCount) },
+  ];
+}
 
 /** Draw the print onto `canvas`, and the forensic overlay (one mark per fight) into `svg`. */
 /**
@@ -308,20 +365,10 @@ export function drawPrint(canvas, svg, params, fights, { strokes = null, animate
     if (strokes) { strokes.getContext("2d").clearRect(0, 0, strokes.width, strokes.height); strokes.style.opacity = "0"; }
   }
 
-  // forensic overlay (shown by the host page when Forensic view is on)
+  // forensic overlay (shown by the host page when Forensic view is on; notes come from markNote)
   if (svg) {
     svg.setAttribute("viewBox", "0 0 300 375");
-    svg.innerHTML = g.minutiae.map(m => {
-      const f = fights[m.i], [x, y] = toDisplay(m.x, m.y), c = MARK_COLOR[f.method_group] ?? "#6b7280";
-      const shape = f.result === "W"
-        ? `<circle cx="${x}" cy="${y}" r="6" fill="none" stroke="${c}" stroke-width="2"/>`
-        : f.result === "L"
-          ? `<rect x="${x - 5.5}" y="${y - 5.5}" width="11" height="11" fill="none" stroke="${c}" stroke-width="2"/>`
-          : `<path d="M${x} ${y - 7} L${x + 7} ${y} L${x} ${y + 7} L${x - 7} ${y} Z" fill="none" stroke="${c}" stroke-width="2"/>`;
-      const title = `Fight ${m.i + 1} of ${fights.length} · ${RESULT_WORD[f.result] ?? f.result} · ${METHOD_WORD[f.method_group] ?? f.method_group}`;
-      const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
-      return `<g class="m"><title>${esc(title)}</title>${shape}<text x="${x + 8}" y="${y - 6}" font-size="9" font-weight="700" fill="${c}" font-family="system-ui">${m.i + 1}</text></g>`;
-    }).join("");
+    svg.innerHTML = g.minutiae.map(m => { const [x, y] = toDisplay(m.x, m.y); return markSvg(fights[m.i], m.i, x, y); }).join("");
   }
   return plan;
 }

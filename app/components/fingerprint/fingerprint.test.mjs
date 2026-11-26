@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { printPlan } from "./fingerprint.js";
+import { printPlan, markNote, markSvg, explainRows } from "./fingerprint.js";
 
 const base = {
   fighter_id: "aa01",
@@ -108,4 +108,47 @@ test("an inside() filter drops lines outside the print", () => {
 test("strokes are ordered from the core outward", () => {
   const near = [[11, 10], [12, 10]], far = [[30, 30], [31, 30]], mid = [[15, 15], [16, 15]];
   assert.deepEqual(orderStrokes([far, near, mid], 10, 10), [near, mid, far]);
+});
+
+test("forensic marks carry no number labels and are hoverable", () => {
+  const svg = markSvg({ result: "W", method_group: "KO_TKO" }, 4, 10, 20);
+  assert.ok(!svg.includes("<text"));
+  assert.ok(svg.includes('class="m"') && svg.includes('data-i="4"'));
+});
+
+test("a mark's note says which fight put it there", () => {
+  const fight = { result: "L", method_group: "SUB", opponent_name: "Bea Beta", event_name: "UFC 300",
+                  event_date: "2024-04-13", end_round: 2, end_time_s: 95 };
+  const note = markNote(fight, 2, 7);
+  assert.equal(note.heading, "Loss by submission");
+  const text = note.lines.join(" ");
+  for (const bit of ["Bea Beta", "UFC 300", "2024-04-13", "Round 2, 1:35", "Fight 3 of 7"]) assert.ok(text.includes(bit), bit);
+});
+
+test("a mark's note copes with missing fight details", () => {
+  const note = markNote({ result: "NC", method_group: "OTHER" }, 0, 1);
+  assert.equal(note.heading, "No contest");
+  assert.ok(!note.lines.join(" ").includes("undefined"));
+});
+
+test("explainer lists every stat that shapes the print, with its value", () => {
+  const rows = explainRows(base, fights);
+  const byFeature = Object.fromEntries(rows.map(r => [r.feature, r.value]));
+  assert.equal(byFeature["Pattern"], "Striker → whorl");
+  assert.equal(byFeature["Ridge spacing"], "5.0");
+  assert.equal(byFeature["Ink darkness"], "50%");
+  assert.equal(byFeature["Worn ridges"], "3.0");
+  assert.equal(byFeature["Print size"], '72"');
+  assert.equal(byFeature["Orientation"], "Orthodox → tilted");
+  assert.equal(byFeature["Core height"], "60%");
+  assert.equal(byFeature["Creases"], "1");
+  assert.equal(byFeature["Marks"], "2");
+  for (const r of rows) assert.ok(r.source && r.effect, r.feature);
+});
+
+test("explainer says when a default stood in for a missing stat", () => {
+  const rows = explainRows({ ...base, reach_in: null, stance: null }, fights);
+  const byFeature = Object.fromEntries(rows.map(r => [r.feature, r.value]));
+  assert.equal(byFeature["Print size"], 'unknown (72" used)');
+  assert.equal(byFeature["Orientation"], "unknown (Orthodox used)");
 });

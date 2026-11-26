@@ -25,9 +25,10 @@ def test_no_score_shows_a_dash():
     assert component_args(payload("A"), payload("B"), None)["score"] == "–"
 
 
-def test_browser_only_gets_what_the_drawing_needs():
+def test_browser_only_gets_what_the_drawing_and_forensic_notes_need():
     fighter = component_args(payload("A"), payload("B"), 73)["a"]
-    assert set(fighter["fights"][0]) == {"result", "method_group"}
+    assert set(fighter["fights"][0]) == {"result", "method_group", "opponent_name", "event_name", "event_date",
+                                         "end_round", "end_time_s"}
     for hidden in ("wins", "losses", "weight_lbs", "small_sample"):
         assert hidden not in fighter["params"]
 
@@ -77,3 +78,13 @@ def test_forensic_view_is_a_toggle_that_starts_off():
     assert "aria-pressed" in INDEX_HTML
     assert re.search(r"\.print svg\s*\{[^}]*display:\s*none", INDEX_HTML)          # off by default
     assert re.search(r"body\.forensic \.print svg\s*\{[^}]*display:\s*block", INDEX_HTML)
+
+
+def test_explainer_and_tooltip_only_show_in_forensic_view():
+    assert 'id="explain"' in INDEX_HTML and 'id="tip"' in INDEX_HTML
+    assert re.search(r"#explain\s*\{[^}]*display:\s*none", INDEX_HTML)
+    assert re.search(r"body\.forensic #explain\s*\{[^}]*display:\s*block", INDEX_HTML)
+
+
+def test_forensic_marks_show_a_magnifying_glass():
+    assert re.search(r"\.m\b[^{]*\{[^}]*cursor:\s*zoom-in", INDEX_HTML)
