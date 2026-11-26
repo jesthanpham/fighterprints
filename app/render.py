@@ -21,7 +21,7 @@ DRAW_PARAMS = [
     "head_pct", "reach_in", "stance", "finish_rate", "ko_losses",
 ]
 DRAW_FIGHT_FIELDS = ["result", "method_group"]
-FRAME_HEIGHT = 510
+FRAME_HEIGHT = 700
 
 
 def _for_drawing(payload: dict) -> dict:
@@ -51,8 +51,8 @@ INDEX_HTML = """<!doctype html>
 <style>
   body { margin: 0; background: transparent; color: #1c1b19;
          font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .row { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; }
-  figure { margin: 0; width: min(300px, calc((100vw - 170px) / 2)); text-align: center; }
+  .row { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 4vw, 56px); padding: 8px 0; }
+  figure { margin: 0; width: min(460px, calc((100vw - 200px) / 2)); text-align: center; }
   .print { position: relative; width: 100%; aspect-ratio: 300 / 375; }
   .print canvas, .print svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .print svg { display: none; }
@@ -69,7 +69,7 @@ INDEX_HTML = """<!doctype html>
   .score .label { color: #6b675f; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
   @media (max-width: 560px) {
     .row { flex-direction: column; gap: 8px; }
-    figure { width: min(300px, 78vw); }
+    figure { width: min(460px, 92vw); }
   }
 </style></head>
 <body>

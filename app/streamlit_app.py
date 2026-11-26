@@ -14,7 +14,7 @@ from ufc.db import connect
 st.set_page_config(
     page_title="Fighterprints",
     page_icon=str(Path(__file__).parent / "static" / "favicon.png"),
-    layout="centered",
+    layout="wide",
 )
 
 # Hide Streamlit's own header, toolbar and footer so the page looks like a finished site.
@@ -22,7 +22,7 @@ st.markdown(
     """<style>
     header[data-testid="stHeader"], div[data-testid="stToolbar"], div[data-testid="stDecoration"],
     div[data-testid="stStatusWidget"], #MainMenu, footer { display: none !important; }
-    .block-container { padding-top: 2.5rem !important; }
+    .block-container { padding-top: 2.5rem !important; max-width: 1180px !important; }
     </style>""",
     unsafe_allow_html=True,
 )

@@ -72,7 +72,7 @@ export function printPlan(params, fights) {
 }
 
 // ---------------- ridge growth ----------------
-const GW = 200, GH = 250, SCALE = 3; // simulation grid, upscaled 3x for display
+const GW = 200, GH = 250, SCALE = 4; // simulation grid, upscaled 4x so large prints stay sharp
 
 function grow(plan, rand) {
   const { spacing } = plan;
