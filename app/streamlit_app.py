@@ -7,7 +7,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # so "app" and "ufc" import when run by streamlit
 
-from app.data import default_pair, has_data, list_fighters, print_payload, style_match
+from app.data import default_pair, has_data, list_fighters, print_payload, style_breakdown
 from app.render import show_prints
 from ufc.db import connect
 
@@ -55,7 +55,7 @@ left, right = st.columns(2)
 a = left.selectbox("Fighter A", ids, index=ids.index(default_a), format_func=labels.get)
 b = right.selectbox("Fighter B", ids, index=ids.index(default_b), format_func=labels.get)
 
-show_prints(print_payload(conn, a), print_payload(conn, b), style_match(conn, a, b))
+show_prints(print_payload(conn, a), print_payload(conn, b), style_breakdown(conn, a, b))
 
 st.markdown(
     '<p style="text-align:center; color:#8a857b; font-size:12px; margin-top:2rem;">'

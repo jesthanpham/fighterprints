@@ -38,11 +38,13 @@ def _without_comments(js: str) -> str:
     return re.sub(r"(?m)[ \t]+//[^\n]*$", "", js)
 
 
-def component_args(a: dict, b: dict, similarity: int | None) -> dict:
+def component_args(a: dict, b: dict, match: dict | None) -> dict:
+    score = match.get("score") if match else None
     return {
         "a": _for_drawing(a),
         "b": _for_drawing(b),
-        "score": f"{similarity}%" if similarity is not None else "–",
+        "score": f"{score}%" if score is not None else "–",
+        "match": match,
     }
 
 
@@ -70,14 +72,22 @@ INDEX_HTML = """<!doctype html>
          box-shadow: 0 4px 14px rgba(28, 27, 25, 0.12); font-size: 13px; line-height: 1.35; }
   #tip strong { display: block; margin-bottom: 2px; }
   #tip .fine { color: #6b675f; font-size: 12px; margin-top: 4px; }
-  #explain { display: none; margin: 22px auto 4px; max-width: 900px; overflow-x: auto; }
+  #explain { display: none; }
   body.forensic #explain { display: block; }
-  #explain table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  #explain th, #explain td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e4e0d6; vertical-align: top; }
-  #explain thead th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b675f; font-weight: 600; }
-  #explain td.val { font-variant-numeric: tabular-nums; white-space: nowrap; }
-  #explain .fine { display: block; color: #8a857b; font-size: 12px; }
-  #explain .src { display: none; color: #6b675f; font-size: 12px; }
+  #match { display: none; }
+  body.forensic #match { display: block; }
+  .panel { margin: 26px auto 4px; max-width: 900px; overflow-x: auto; }
+  .panel h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .panel table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .panel th, .panel td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e4e0d6; vertical-align: top; }
+  .panel thead th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #6b675f; font-weight: 600; }
+  .panel td.val, .panel th.val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .panel .fine { display: block; color: #8a857b; font-size: 12px; }
+  .panel .src { display: none; color: #6b675f; font-size: 12px; }
+  .panel tfoot td { border-bottom: none; padding-top: 6px; padding-bottom: 6px; color: #4a4740; }
+  .panel tfoot tr:first-child td { border-top: 2px solid #d6d2c8; padding-top: 10px; }
+  .panel tfoot tr.total td { font-weight: 700; font-size: 16px; color: #1c1b19; border-top: 1px solid #d6d2c8; }
+  .panel .num { text-align: right; }
   figcaption { margin-top: 10px; font-weight: 600; font-size: 17px; min-height: 1.4em; }
   .score { flex: 0 0 auto; min-width: 104px; text-align: center; }
   .score .pct { font-size: clamp(34px, 7vw, 56px); font-weight: 700; letter-spacing: -0.02em;
@@ -86,8 +96,8 @@ INDEX_HTML = """<!doctype html>
   @media (max-width: 560px) {
     .row { flex-direction: column; gap: 8px; }
     figure { width: min(460px, 92vw); }
-    #explain table { font-size: 13px; }
-    #explain th, #explain td { padding: 7px 6px; }
+    .panel table { font-size: 13px; }
+    .panel th, .panel td { padding: 7px 6px; }
     #explain th:nth-child(2), #explain td:nth-child(2) { display: none; }
     #explain .src { display: block; }
     #explain td.val { white-space: normal; }
@@ -100,7 +110,8 @@ INDEX_HTML = """<!doctype html>
   <figure id="b"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
 </div>
 <div class="tools"><button id="forensic" type="button" aria-pressed="false">Forensic view</button></div>
-<div id="explain"></div>
+<div id="explain" class="panel"></div>
+<div id="match" class="panel"></div>
 <div id="tip" role="tooltip"></div>
 <script type="module">
 import { drawPrint, explainRows, markNote } from "./fingerprint.js";
@@ -127,7 +138,45 @@ function buildExplainer() {
     body.append(tr);
   });
   table.append(body);
-  box.replaceChildren(table);
+  box.replaceChildren(el("h3", "How each print is made"), table);
+}
+
+function buildMatch(match) {
+  const box = document.getElementById("match");
+  const title = el("h3", "How the style match is made");
+  if (!match) { box.replaceChildren(title, el("p", "No style stats for these fighters yet, so there is no score.", "fine")); return; }
+  const dash = v => (v == null ? "–" : String(v));
+  const table = el("table"), head = el("tr");
+  const headings = [["Style stat (UFC percentile)"], [current.a.params.fighter_name, "num"],
+                    [current.b.params.fighter_name, "num"], ["Gap", "num"]];
+  for (const [h, cls] of headings) head.append(el("th", h, cls));
+  table.append(el("thead")); table.tHead.append(head);
+  const body = el("tbody");
+  for (const r of match.rows) {
+    const tr = el("tr");
+    tr.append(el("td", r.label), el("td", dash(r.a), "val num"), el("td", dash(r.b), "val num"), el("td", dash(r.gap), "val num"));
+    body.append(tr);
+  }
+  table.append(body);
+  const foot = el("tfoot");
+  const line = (label, value, cls) => {
+    const tr = el("tr", null, cls), td = el("td", label); td.colSpan = 3;
+    tr.append(td, el("td", value, "val num")); foot.append(tr);
+  };
+  const [styleA, styleB] = match.archetypes;
+  if (match.score == null) {
+    line(`Only ${match.shared} stat${match.shared === 1 ? "" : "s"} both fighters have; ${match.min_shared} are needed for a score`, "–");
+    line("Style match", "–", "total");
+  } else {
+    line(`Average gap over the ${match.shared} stats both fighters have`, match.avg_gap.toFixed(1));
+    line("100 − average gap", match.base.toFixed(1));
+    line(match.penalty ? `Different style labels (${styleA} vs ${styleB})` : `Same style label (${styleA})`,
+         match.penalty ? `−${match.penalty}` : "0");
+    line("Style match", `${match.score}%`, "total");
+  }
+  table.append(foot);
+  box.replaceChildren(title, table,
+    el("p", "Each stat is a percentile: the share of established UFC fighters at or below this fighter. The gap is how far apart the two are.", "fine"));
 }
 
 const tip = document.getElementById("tip");
@@ -183,6 +232,7 @@ window.addEventListener("message", event => {
               { strokes: fig.querySelector("canvas.strokes"), animate: !calm });
   }
   buildExplainer();
+  buildMatch(args.match);
   resize();
 });
 document.getElementById("forensic").addEventListener("click", event => {
@@ -211,6 +261,6 @@ def _component():
     return components.declare_component("fighterprints", path=str(build_component_dir()))
 
 
-def show_prints(a: dict, b: dict, similarity: int | None) -> None:
+def show_prints(a: dict, b: dict, match: dict | None) -> None:
     """Draw both prints and the score. The stable key keeps the same frame alive across picks."""
-    _component()(**component_args(a, b, similarity), key="prints", default=None, height=FRAME_HEIGHT)
+    _component()(**component_args(a, b, match), key="prints", default=None, height=FRAME_HEIGHT)

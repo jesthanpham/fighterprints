@@ -19,7 +19,7 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 | Website: two pickers, prints that draw themselves stroke by stroke (no reload/blink), count-up **style match** %, a **Forensic view** toggle (one mark per fight), a small data-credit line, off-white, no Streamlit chrome, fingerprint favicon, stacks on phones, no explanations | ✅ |
 | README with screenshot, architecture, how prints and similarity work | ✅ |
 | Fresh-clone check (empty DB → full run from GitHub → 2,778 prints) | ✅ |
-| Tests: 72 pytest, 15 renderer (node), 33 dbt data tests + 6 dbt unit tests; CI green on GitHub | ✅ all green |
+| Tests: 77 pytest, 15 renderer (node), 33 dbt data tests + 6 dbt unit tests; CI green on GitHub | ✅ all green |
 
 ## CI
 GitHub Actions runs lint, the pytest suite (including the full dbt build against a Postgres service) and the renderer tests on every push; the README badge shows the result.
@@ -43,7 +43,7 @@ node --test 'app/components/fingerprint/*.test.mjs'
 Optional extras: tune archetype thresholds (GSP shows as Grappler), "Surprise me" button, shareable matchup links, download-print button, row-level change report between snapshots.
 
 ## Decisions settled (2026-11-25)
-- **Forensic view: shown**, as a toggle under the prints that starts off. Turned on, it marks every fight (circle = win, square = loss, diamond = other; red = KO/TKO, blue = submission, grey = decision; no number labels). Hovering a mark shows a magnifying-glass cursor and a note naming the fight behind it (result, opponent, event, date, round and time). A table below the prints lists each print feature, the stat that drives it and both fighters' values. The plain print stays the default view and explains nothing.
+- **Forensic view: shown**, as a toggle under the prints that starts off. Turned on, it marks every fight (circle = win, square = loss, diamond = other; red = KO/TKO, blue = submission, grey = decision; no number labels). Hovering a mark shows a magnifying-glass cursor and a note naming the fight behind it (result, opponent, event, date, round and time). A table below the prints lists each print feature, the stat that drives it and both fighters' values; a second table shows how the style match is made (each stat's UFC percentile for both fighters, the gap, the average gap, the style-label penalty and the final score). Both come from the same code as the print and the score (`explainRows` in the renderer, `match_breakdown` in `app/data.py`), so they can't disagree. The plain print stays the default view and explains nothing.
 - **Fighter records in the pickers: kept.** They tell apart same-name fighters.
 - **Data credit: back**, as one small grey line at the bottom linking `Greco1899/scrape_ufc_stats` (GPL-3.0).
 

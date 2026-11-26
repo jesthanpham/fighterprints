@@ -80,21 +80,52 @@ MIN_SHARED_DIMENSIONS = 4
 ARCHETYPE_PENALTY = 10
 
 
+DIMENSION_LABELS = {
+    "pace_pct": "Strikes landed per minute",
+    "absorbed_pct": "Strikes absorbed per minute",
+    "accuracy_pct": "Striking accuracy",
+    "defense_pct": "Striking defence",
+    "takedown_pct": "Takedowns per 15 minutes",
+    "control_pct": "Time spent in control",
+    "submission_pct": "Submission attempts per 15 minutes",
+    "finish_pct": "Finish rate",
+    "aim_pct": "Strikes aimed at the head",
+}
+
+
+def match_breakdown(a: dict, b: dict) -> dict:
+    """How the similarity score is made, step by step: each stat's UFC percentile for both fighters and the gap,
+    the average gap, the style-label penalty and the final score (None with fewer than 4 shared stats).
+    """
+    pct = lambda v: None if v is None else round(100 * v)
+    rows, gaps = [], []
+    for d in DIMENSIONS:
+        va, vb = a.get(d), b.get(d)
+        gap = abs(va - vb) if va is not None and vb is not None else None
+        if gap is not None:
+            gaps.append(gap)
+        rows.append({"label": DIMENSION_LABELS[d], "a": pct(va), "b": pct(vb), "gap": pct(gap)})
+    archetypes = [a.get("archetype"), b.get("archetype")]
+    penalty = ARCHETYPE_PENALTY if archetypes[0] != archetypes[1] else 0
+    out = {"rows": rows, "shared": len(gaps), "min_shared": MIN_SHARED_DIMENSIONS, "archetypes": archetypes,
+           "penalty": penalty, "avg_gap": None, "base": None, "score": None}
+    if len(gaps) >= MIN_SHARED_DIMENSIONS:
+        avg_gap = 100 * sum(gaps) / len(gaps)
+        out.update(avg_gap=round(avg_gap, 1), base=round(100 - avg_gap, 1),
+                   score=round(min(100, max(0, 100 - avg_gap - penalty))))
+    return out
+
+
 def match_score(a: dict, b: dict) -> int | None:
     """Similarity 0-100: 100 minus the average percentile gap, minus 10 if the style labels differ.
 
     Only dimensions both fighters have count; with fewer than 4 there's no honest score.
     """
-    gaps = [abs(a[d] - b[d]) for d in DIMENSIONS if a.get(d) is not None and b.get(d) is not None]
-    if len(gaps) < MIN_SHARED_DIMENSIONS:
-        return None
-    score = 100 * (1 - sum(gaps) / len(gaps))
-    if a.get("archetype") != b.get("archetype"):
-        score -= ARCHETYPE_PENALTY
-    return round(min(100, max(0, score)))
+    return match_breakdown(a, b)["score"]
 
 
-def style_match(conn: psycopg.Connection, a_id: str, b_id: str) -> int | None:
+def style_breakdown(conn: psycopg.Connection, a_id: str, b_id: str) -> dict | None:
+    """The score and how it was made, or None if either fighter has no style vector."""
     columns = ["fighter_id", "archetype", *DIMENSIONS]
     rows = conn.execute(
         f"select {', '.join(columns)} from marts.fighter_style_vector where fighter_id = any(%s)",
@@ -103,4 +134,9 @@ def style_match(conn: psycopg.Connection, a_id: str, b_id: str) -> int | None:
     vectors = {r[0]: dict(zip(columns, r, strict=True)) for r in rows}
     if a_id not in vectors or b_id not in vectors:
         return None
-    return match_score(vectors[a_id], vectors[b_id])
+    return match_breakdown(vectors[a_id], vectors[b_id])
+
+
+def style_match(conn: psycopg.Connection, a_id: str, b_id: str) -> int | None:
+    breakdown = style_breakdown(conn, a_id, b_id)
+    return breakdown["score"] if breakdown else None

@@ -1,6 +1,14 @@
 import json
 
-from app.data import default_pair, list_fighters, match_score, print_payload, style_match
+from app.data import (
+    default_pair,
+    list_fighters,
+    match_breakdown,
+    match_score,
+    print_payload,
+    style_breakdown,
+    style_match,
+)
 
 
 def test_print_payload_shape(built_marts):
@@ -66,3 +74,32 @@ def test_style_match_without_established_fighters_is_none(built_marts):
 def test_default_pair_is_two_different_fighters(built_marts):
     a, b = default_pair(built_marts)
     assert a != b
+
+
+def test_breakdown_shows_every_stat_and_its_gap():
+    out = match_breakdown(vector(0.3), vector(0.5, aim_pct=0.9, archetype="Wrestler"))
+    assert len(out["rows"]) == 9
+    aim = next(r for r in out["rows"] if r["label"] == "Strikes aimed at the head")
+    assert (aim["a"], aim["b"], aim["gap"]) == (30, 90, 60)
+    assert out["shared"] == 9
+    assert out["avg_gap"] == 24.4                 # (8 x 20 + 60) / 9
+    assert out["base"] == 75.6
+    assert out["archetypes"] == ["Striker", "Wrestler"] and out["penalty"] == 10
+    assert out["score"] == 66 == match_score(vector(0.3), vector(0.5, aim_pct=0.9, archetype="Wrestler"))
+
+
+def test_breakdown_marks_stats_one_fighter_lacks():
+    out = match_breakdown(vector(0.5, pace_pct=None), vector(0.5))
+    pace = next(r for r in out["rows"] if r["label"] == "Strikes landed per minute")
+    assert pace["a"] is None and pace["gap"] is None
+    assert out["shared"] == 8 and out["penalty"] == 0 and out["score"] == 100
+
+
+def test_breakdown_with_too_few_shared_stats_has_no_score():
+    out = match_breakdown(vector(None, pace_pct=0.5, absorbed_pct=0.5, finish_pct=0.5), vector(0.5))
+    assert out["shared"] == 3 and out["score"] is None
+
+
+def test_style_breakdown_without_established_fighters_has_no_score(built_marts):
+    out = style_breakdown(built_marts, "aa01", "dd01")
+    assert out["shared"] == 0 and out["score"] is None
