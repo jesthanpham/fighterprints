@@ -1,4 +1,6 @@
-# Handoff: Fighterprints (as of 2026-11-26)
+# Handoff: Fighterprints (final, 2026-11-26)
+
+**Status: finished.** The site is live, the code is on GitHub, and no work is open. Only the checks under **What's left** remain, and they're yours.
 
 ## Why this exists
 Portfolio project (now named **Fighterprints**) for a **Data Engineer interview at Canada's Department of National Defence**.
@@ -16,8 +18,9 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 | Fighter identity resolution (99.94% matched; 10 of 18,030 appearances unresolved) | ✅ |
 | dbt staging → intermediate → marts (career stats, archetypes, print contract, style percentiles) | ✅ |
 | Dagster: lineage, freshness check; in the cloud the weekly trigger is Railway cron (Sun 15:00 UTC) | ✅ |
-| Website: two pickers, prints that draw themselves stroke by stroke (no reload/blink), count-up **style match** %, a **Forensic view** toggle (one mark per fight), a small data-credit line, off-white, no Streamlit chrome, fingerprint favicon, stacks on phones, no explanations | ✅ |
-| README with screenshot, architecture, how prints and similarity work | ✅ |
+| Website: wide layout with large prints (up to 460px, drawn at 800×1000), two pickers, prints that draw themselves stroke by stroke (no reload/blink), count-up **style match** %, a **Forensic view** toggle (marks, hover notes, two explainer tables), a small data-credit line, off-white, no Streamlit chrome, fingerprint favicon, stacks on phones | ✅ |
+| README with a current screenshot, architecture, how prints, similarity and Forensic view work | ✅ |
+| `docs/INTERVIEW.md`: pitch, demo script (ends on Forensic view), likely questions, numbers, weak spots | ✅ |
 | Fresh-clone check (empty DB → full run from GitHub → 2,778 prints) | ✅ |
 | Tests: 77 pytest, 15 renderer (node), 33 dbt data tests + 6 dbt unit tests; CI green on GitHub | ✅ all green |
 
@@ -34,15 +37,15 @@ uv run pytest                        # needs the postgres container up
 node --test 'app/components/fingerprint/*.test.mjs'
 ```
 
-## What to do next
-**The project is finished.** Remaining work is yours:
-1. **Resume:** paste the bullet (live site + GitHub links).
-2. **Interview prep:** practise `docs/INTERVIEW.md`; dry-run the demo: live site → Railway Cron Runs (Run now) → `docker compose up` → Dagster at http://localhost:3000 (Lineage).
-3. **Check Monday 2026-11-30** that Sunday's first scheduled cloud run is green in Railway's Cron Runs.
+## What's left (yours)
+1. **Phone check:** on a real phone, turn on Forensic view, tap a mark (its note should appear) and scroll to the two tables. The built-in browser's phone emulation drew the bottom of the frame wrongly, so this was never confirmed visually. If the button is missing, move it above the prints in `app/render.py`.
+2. **Monday 2026-11-30:** check that Sunday's first scheduled cloud run is green in Railway → pipeline → Cron Runs.
+3. **Resume:** done 2026-11-26 in `/Users/jp/Dev/resume/benz_pham_resume.tex` (rebuild with `tectonic`). The Fighterprints bullets are rewritten and the live site and GitHub links added; originals are kept as `*.before.*`. Open question: the resume says "Benz Pham", the GitHub account is `jesthanpham`.
+4. **Interview prep:** practise `docs/INTERVIEW.md`; dry-run the demo: live site → Forensic view → Railway Cron Runs (Run now) → `docker compose up` → Dagster at http://localhost:3000 (Lineage).
 
 Optional extras: tune archetype thresholds (GSP shows as Grappler), "Surprise me" button, shareable matchup links, download-print button, row-level change report between snapshots.
 
-## Decisions settled (2026-11-25)
+## Decisions settled (2026-11-25/26)
 - **Forensic view: shown**, as a toggle under the prints that starts off. Turned on, it marks every fight (circle = win, square = loss, diamond = other; red = KO/TKO, blue = submission, grey = decision; no number labels). Hovering a mark shows a magnifying-glass cursor and a note naming the fight behind it (result, opponent, event, date, round and time). A table below the prints lists each print feature, the stat that drives it and both fighters' values; a second table shows how the style match is made (each stat's UFC percentile for both fighters, the gap, the average gap, the style-label penalty and the final score). Both come from the same code as the print and the score (`explainRows` in the renderer, `match_breakdown` in `app/data.py`), so they can't disagree. The plain print stays the default view and explains nothing.
 - **Fighter records in the pickers: kept.** They tell apart same-name fighters.
 - **Data credit: back**, as one small grey line at the bottom linking `Greco1899/scrape_ufc_stats` (GPL-3.0).
