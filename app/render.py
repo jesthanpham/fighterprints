@@ -21,7 +21,7 @@ DRAW_PARAMS = [
     "head_pct", "reach_in", "stance", "finish_rate", "ko_losses",
 ]
 DRAW_FIGHT_FIELDS = ["result", "method_group"]
-FRAME_HEIGHT = 470
+FRAME_HEIGHT = 510
 
 
 def _for_drawing(payload: dict) -> dict:
@@ -56,6 +56,12 @@ INDEX_HTML = """<!doctype html>
   .print { position: relative; width: 100%; aspect-ratio: 300 / 375; }
   .print canvas, .print svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .print svg { display: none; }
+  body.forensic .print svg { display: block; }
+  .tools { text-align: center; padding: 4px 0 2px; }
+  #forensic { font: inherit; font-size: 13px; color: #6b675f; background: none; cursor: pointer;
+              border: 1px solid #d6d2c8; border-radius: 999px; padding: 4px 14px; }
+  #forensic:hover { color: #1c1b19; border-color: #b9b4a8; }
+  #forensic[aria-pressed="true"] { color: #f6f4ef; background: #1c1b19; border-color: #1c1b19; }
   figcaption { margin-top: 10px; font-weight: 600; font-size: 17px; min-height: 1.4em; }
   .score { flex: 0 0 auto; min-width: 104px; text-align: center; }
   .score .pct { font-size: clamp(34px, 7vw, 56px); font-weight: 700; letter-spacing: -0.02em;
@@ -72,6 +78,7 @@ INDEX_HTML = """<!doctype html>
   <div class="score"><div class="pct" id="score"></div><div class="label">style match</div></div>
   <figure id="b"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
 </div>
+<div class="tools"><button id="forensic" type="button" aria-pressed="false">Forensic view</button></div>
 <script type="module">
 import { drawPrint } from "./fingerprint.js";
 
@@ -110,6 +117,10 @@ window.addEventListener("message", event => {
               { strokes: fig.querySelector("canvas.strokes"), animate: !calm });
   }
   send("streamlit:setFrameHeight", { height: document.body.scrollHeight });
+});
+document.getElementById("forensic").addEventListener("click", event => {
+  const on = document.body.classList.toggle("forensic");
+  event.currentTarget.setAttribute("aria-pressed", String(on));
 });
 send("streamlit:componentReady", { apiVersion: 1 });
 </script>

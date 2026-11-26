@@ -19,6 +19,15 @@ def test_page_renders(built_marts, monkeypatch):
     assert len(at.caption) == 0
 
 
+def test_page_credits_the_data_source(built_marts, monkeypatch):
+    monkeypatch.setenv("UFC_DATABASE_URL", TEST_DATABASE_URL)
+    at = AppTest.from_file(str(PAGE), default_timeout=30)
+    at.run()
+    text = " ".join(m.value for m in at.markdown)
+    assert "https://github.com/Greco1899/scrape_ufc_stats" in text
+    assert "UFCStats" in text
+
+
 def test_page_explains_when_there_is_no_data_yet(db, monkeypatch):
     """Fresh stack, pipeline not run yet: a friendly message, not a traceback."""
     monkeypatch.setenv("UFC_DATABASE_URL", TEST_DATABASE_URL)

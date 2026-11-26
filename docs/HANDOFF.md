@@ -16,10 +16,10 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 | Fighter identity resolution (99.94% matched; 10 of 18,030 appearances unresolved) | ✅ |
 | dbt staging → intermediate → marts (career stats, archetypes, print contract, style percentiles) | ✅ |
 | Dagster: lineage, freshness check; in the cloud the weekly trigger is Railway cron (Sun 15:00 UTC) | ✅ |
-| Website: two pickers, prints that draw themselves stroke by stroke (no reload/blink), count-up **style match** %, off-white, no Streamlit chrome, fingerprint favicon, stacks on phones, no explanations | ✅ |
+| Website: two pickers, prints that draw themselves stroke by stroke (no reload/blink), count-up **style match** %, a **Forensic view** toggle (one mark per fight), a small data-credit line, off-white, no Streamlit chrome, fingerprint favicon, stacks on phones, no explanations | ✅ |
 | README with screenshot, architecture, how prints and similarity work | ✅ |
 | Fresh-clone check (empty DB → full run from GitHub → 2,778 prints) | ✅ |
-| Tests: 68 pytest, 10 renderer (node), 33 dbt data tests + 6 dbt unit tests; CI green on GitHub | ✅ all green |
+| Tests: 70 pytest, 10 renderer (node), 33 dbt data tests + 6 dbt unit tests; CI green on GitHub | ✅ all green |
 
 ## CI
 GitHub Actions runs lint, the pytest suite (including the full dbt build against a Postgres service) and the renderer tests on every push; the README badge shows the result.
@@ -42,10 +42,10 @@ node --test 'app/components/fingerprint/*.test.mjs'
 
 Optional extras: tune archetype thresholds (GSP shows as Grappler), "Surprise me" button, shareable matchup links, download-print button, row-level change report between snapshots.
 
-## Decisions waiting on you
-- **Forensic view conflicts with "don't show how stats are used."** It marks every fight on the print. The overlay code exists but is hidden. Keep it hidden, or show it?
-- **Fighter records in the pickers**, e.g. "Khabib Nurmagomedov (13-0-0)". They help tell apart same-name fighters. Keep or drop?
-- **Data credit** was removed from the site (it's in the README). Re-add a small footer?
+## Decisions settled (2026-11-25)
+- **Forensic view: shown**, as a toggle under the prints that starts off. Turned on, it marks every fight (circle = win, square = loss, diamond = other; red = KO/TKO, blue = submission, grey = decision; hover for "Fight n of N"). The plain print stays the default view.
+- **Fighter records in the pickers: kept.** They tell apart same-name fighters.
+- **Data credit: back**, as one small grey line at the bottom linking `Greco1899/scrape_ufc_stats` (GPL-3.0).
 
 ## Key decisions already made
 - **Source:** the community CSV extract `Greco1899/scrape_ufc_stats` (GPL-3.0). UFCStats bot-blocks scrapers, and we don't bypass that.

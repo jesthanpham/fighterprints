@@ -56,3 +56,11 @@ a = left.selectbox("Fighter A", ids, index=ids.index(default_a), format_func=lab
 b = right.selectbox("Fighter B", ids, index=ids.index(default_b), format_func=labels.get)
 
 show_prints(print_payload(conn, a), print_payload(conn, b), style_match(conn, a, b))
+
+st.markdown(
+    '<p style="text-align:center; color:#8a857b; font-size:12px; margin-top:2rem;">'
+    'Data from UFCStats via '
+    '<a href="https://github.com/Greco1899/scrape_ufc_stats" style="color:inherit;">Greco1899/scrape_ufc_stats</a>'
+    ' (GPL-3.0)</p>',
+    unsafe_allow_html=True,
+)
