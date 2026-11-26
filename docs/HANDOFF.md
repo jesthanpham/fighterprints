@@ -1,4 +1,4 @@
-# Handoff: Fighterprints (as of 2026-11-23)
+# Handoff: Fighterprints (as of 2026-11-26)
 
 ## Why this exists
 Portfolio project (now named **Fighterprints**) for a **Data Engineer interview at Canada's Department of National Defence**.
@@ -15,11 +15,11 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 | Pipeline: download 6 CSVs → snapshots → header contract + shrink guard → `src` tables | ✅ |
 | Fighter identity resolution (99.94% matched; 10 of 18,030 appearances unresolved) | ✅ |
 | dbt staging → intermediate → marts (career stats, archetypes, print contract, style percentiles) | ✅ |
-| Dagster: lineage, freshness check, weekly schedule (Sun 10:00 Toronto, on by default) | ✅ |
-| Website: two fighter pickers, two generated fingerprints, similarity %, off-white, no explanations | ✅ |
+| Dagster: lineage, freshness check; in the cloud the weekly trigger is Railway cron (Sun 15:00 UTC) | ✅ |
+| Website: two pickers, prints that draw themselves stroke by stroke (no reload/blink), count-up **style match** %, off-white, no Streamlit chrome, fingerprint favicon, stacks on phones, no explanations | ✅ |
 | README with screenshot, architecture, how prints and similarity work | ✅ |
 | Fresh-clone check (empty DB → full run from GitHub → 2,778 prints) | ✅ |
-| Tests: 59 pytest, 6 renderer (node), 33 dbt data tests + 6 dbt unit tests | ✅ all green |
+| Tests: 68 pytest, 10 renderer (node), 33 dbt data tests + 6 dbt unit tests; CI green on GitHub | ✅ all green |
 
 ## CI
 GitHub Actions runs lint, the pytest suite (including the full dbt build against a Postgres service) and the renderer tests on every push; the README badge shows the result.
@@ -34,14 +34,13 @@ uv run pytest                        # needs the postgres container up
 node --test 'app/components/fingerprint/*.test.mjs'
 ```
 
-## What to do next (in order)
-1. **Resume:** add https://github.com/jesthanpham/fighterprints to the resume (done on GitHub's side).
-2. **Phase 2 (write a new plan first):**
-   - Tune archetype thresholds. For example GSP comes out as a Grappler, though most fans would call him a wrestler.
-   - Write `docs/INTERVIEW.md` (60-second pitch, likely questions and answers) and `docs/ARCHITECTURE.md`.
-   - Add a row-level change report between snapshots (rows added / changed / removed).
-   - Optionally pre-render prints on the server, which would fully hide the logic from page source.
-3. **Interview prep:** practise the live demo: Dagster lineage → a run → the compare page.
+## What to do next
+**The project is finished.** Remaining work is yours:
+1. **Resume:** paste the bullet (live site + GitHub links).
+2. **Interview prep:** practise `docs/INTERVIEW.md`; dry-run the demo: live site → Railway Cron Runs (Run now) → `docker compose up` → Dagster at http://localhost:3000 (Lineage).
+3. **Check Monday 2026-11-30** that Sunday's first scheduled cloud run is green in Railway's Cron Runs.
+
+Optional extras: tune archetype thresholds (GSP shows as Grappler), "Surprise me" button, shareable matchup links, download-print button, row-level change report between snapshots.
 
 ## Decisions waiting on you
 - **Forensic view conflicts with "don't show how stats are used."** It marks every fight on the print. The overlay code exists but is hidden. Keep it hidden, or show it?
@@ -51,7 +50,7 @@ node --test 'app/components/fingerprint/*.test.mjs'
 ## Key decisions already made
 - **Source:** the community CSV extract `Greco1899/scrape_ufc_stats` (GPL-3.0). UFCStats bot-blocks scrapers, and we don't bypass that.
 - **Prints are drawn in the browser** from the `marts.fighter_print_params` + `marts.fighter_fight_timeline` contract.
-- **Similarity** = 100 − the average UFC-percentile gap over 8 style dimensions, minus 10 if the style labels differ. No score if fewer than 4 shared dimensions.
+- **Similarity ("style match")** = 100 − the average UFC-percentile gap over 9 style dimensions (incl. where they aim), minus 10 if the style labels differ. No score if fewer than 4 shared dimensions.
 - **Each CSV is its own Dagster asset** (`src/<file>`), so lineage connects into dbt.
 - **Manual aliases** for 11 nickname/spelling cases live in `src/ufc/identity/aliases.csv`. 7 names are absent upstream and stay unresolved.
 
