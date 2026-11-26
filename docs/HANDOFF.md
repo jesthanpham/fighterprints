@@ -21,6 +21,9 @@ Portfolio project (now named **Fighterprints**) for a **Data Engineer interview 
 | Fresh-clone check (empty DB → full run from GitHub → 2,778 prints) | ✅ |
 | Tests: 59 pytest, 6 renderer (node), 33 dbt data tests + 6 dbt unit tests | ✅ all green |
 
+## CI
+GitHub Actions runs lint, the pytest suite (including the full dbt build against a Postgres service) and the renderer tests on every push; the README badge shows the result.
+
 ## How to run it
 Docker is OrbStack; its CLI lives at `~/.orbstack/bin` (not on PATH in every shell).
 
