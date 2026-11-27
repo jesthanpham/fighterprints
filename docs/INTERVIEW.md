@@ -30,7 +30,7 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 1. **Dagster → Lineage** (http://localhost:3000). *"Here's the whole pipeline as a graph: the download, one asset per source file, identity resolution, then dbt's staging, intermediate and mart layers. Each box knows what it depends on."*
 2. **Railway → pipeline → Cron Runs.** *"These are the real Sunday runs in the cloud; I can also click Run now."* Then back in Dagster, click a run: *"Every run is logged: how many new file versions arrived, rows loaded, how many names each matching rule resolved. The freshness check warns me if the upstream source stops updating."*
 3. **The live site** (https://fighterprints.up.railway.app). Pick **Khabib Nurmagomedov** vs **Islam Makhachev** (85%), then swap one for **Max Holloway** (48%). Each print draws itself as you pick. *"Teammates with the same style score high; a wrestler against a volume striker scores low."*
-4. **Forensic view.** Click **Forensic view** under the prints. Every fight appears as a mark: shape for the result, colour for the method. Hover one: *"This mark is his first UFC fight: the opponent, the event, the round and time. Every mark traces back to a row in the database."* Scroll to the two tables: *"This is how each print is made, stat by stat, and this is the style match worked out line by line. The table and the big number come from the same function, so they can't disagree."*
+4. **Forensic view** (on when the page opens). Every fight appears as a mark: shape for the result, colour for the method. Hover one: *"This mark is his first UFC fight: the opponent, the event, the round and time. Every mark traces back to a row in the database."* Scroll to the two tables: *"This is how each print is made, stat by stat, and this is the style match worked out line by line. The table and the big number come from the same function, so they can't disagree."*
 5. **Close:** *"The page only reads three tables from the final layer. That's the contract between the pipeline and the app, and it's tested."*
 
 ---
@@ -92,8 +92,8 @@ For the Data Engineer interview at the Department of National Defence. Read it o
 **How does the similarity score work?**
 "Each fighter is ranked against the whole UFC on 9 style stats as percentiles, so very different stats share one 0–100 scale. Similarity is 100 minus the average gap, minus 10 if their style labels differ. If they share fewer than 4 stats, there's no score instead of a misleading one. On the site, Forensic view shows the working: each stat's percentile for both fighters, the gaps, the average, the penalty and the result."
 
-**Why is the explanation behind a toggle?**
-"The default view is the product: two prints and one number, nothing to read. Forensic view is the audit trail for anyone who wants to check it, the same idea as a dashboard that lets you drill down to the source rows. Both views read the same tables."
+**Why does the site open in Forensic view?**
+"Because the point is that every number can be checked. The page opens on the audit trail: each mark traces to a fight, and both tables show the working, the same idea as a dashboard that lets you drill down to the source rows. One click switches to the clean view, just the prints and the score. Both views read the same tables."
 
 **What would you change to run this in production?**
 "CI already runs lint and every test on each push; I'd add branch protection so nothing merges while it's red. Alerts to email or Teams on failures. A read-only database user for the app; it currently uses the pipeline's user. Secrets in a vault instead of defaults. And probably a managed cloud database. Government of Canada teams commonly use Azure, and the design would move over as-is."

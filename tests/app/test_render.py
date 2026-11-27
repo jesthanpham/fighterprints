@@ -74,10 +74,11 @@ def test_prints_stack_on_phones():
     assert "@media (max-width: 560px)" in INDEX_HTML
 
 
-def test_forensic_view_is_a_toggle_that_starts_off():
+def test_forensic_view_is_a_toggle_that_starts_on():
     assert 'id="forensic"' in INDEX_HTML and ">Forensic view<" in INDEX_HTML
-    assert "aria-pressed" in INDEX_HTML
-    assert re.search(r"\.print svg\s*\{[^}]*display:\s*none", INDEX_HTML)          # off by default
+    assert '<body class="forensic">' in INDEX_HTML                                  # on when the page opens
+    assert 'aria-pressed="true">Forensic view<' in INDEX_HTML
+    assert re.search(r"\.print svg\s*\{[^}]*display:\s*none", INDEX_HTML)          # off once toggled
     assert re.search(r"body\.forensic \.print svg\s*\{[^}]*display:\s*block", INDEX_HTML)
 
 

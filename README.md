@@ -10,7 +10,7 @@ It ingests the full UFC stats history (798 events, 9,000+ fights, 42,000+ fighte
 
 ![Khabib Nurmagomedov vs Max Holloway](docs/img/compare.jpg)
 
-*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease): a 48% style match. By default the site shows only the prints and the score; **Forensic view** shows the working (below).*
+*Khabib (Wrestler: loop pattern, no KO losses so no creases) vs Max Holloway (Brawler: tented arch, one crease): a 48% style match. The site opens in **Forensic view**, which shows the working (below); switch it off for just the prints and the score.*
 
 ---
 
@@ -115,7 +115,7 @@ Each fighter is placed on 9 style dimensions as a **UFC-wide percentile** (the s
 
 ## Forensic view
 
-The default page explains nothing: two prints and one number. The **Forensic view** button under the prints turns on the audit trail:
+The site opens in **Forensic view**, the audit trail. The button under the prints switches it off, leaving just two prints and one number:
 
 - **Every fight appears as a mark** on the print. Shape shows the result (circle win, square loss, diamond draw or no contest) and colour the method (red KO/TKO, blue submission, grey decision).
 - **Hovering a mark** (magnifying-glass cursor) names the fight behind it: opponent, event, date, round and time.

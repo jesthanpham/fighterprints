@@ -103,13 +103,13 @@ INDEX_HTML = """<!doctype html>
     #explain td.val { white-space: normal; }
   }
 </style></head>
-<body>
+<body class="forensic">
 <div class="row">
   <figure id="a"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
   <div class="score"><div class="pct" id="score"></div><div class="label">style match</div></div>
   <figure id="b"><div class="print"><canvas class="ink"></canvas><canvas class="strokes"></canvas><svg></svg></div><figcaption></figcaption></figure>
 </div>
-<div class="tools"><button id="forensic" type="button" aria-pressed="false">Forensic view</button></div>
+<div class="tools"><button id="forensic" type="button" aria-pressed="true">Forensic view</button></div>
 <div id="explain" class="panel"></div>
 <div id="match" class="panel"></div>
 <div id="tip" role="tooltip"></div>
